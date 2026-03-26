@@ -1,0 +1,145 @@
+{
+  "clients": {
+    "title": "Customers",
+    "entity": "Client",
+    "api": "/api/clients",
+    "listColumns": ["full_name", "email", "phone", "loyalty_points", "membership_tier", "risk_score"],
+    "fields": [
+      { "name": "full_name", "type": "text", "label": "Full name", "required": true },
+      { "name": "email", "type": "email", "label": "Email", "required": true },
+      { "name": "phone", "type": "text", "label": "Phone" },
+      { "name": "preferred_staff_id", "type": "select", "label": "Preferred staff", "source": "staff" },
+      { "name": "telehealth_consent", "type": "boolean", "label": "Telehealth consent" },
+      { "name": "membership_tier", "type": "text", "label": "Membership tier", "readonly": true },
+      { "name": "loyalty_points", "type": "number", "label": "Loyalty points", "readonly": true },
+      { "name": "risk_score", "type": "number", "label": "Risk score", "readonly": true }
+    ],
+    "permissions": {
+      "list": "client:read",
+      "create": "client:create",
+      "edit": "client:update",
+      "delete": "client:delete"
+    }
+  },
+
+  "bookings": {
+    "title": "Bookings",
+    "entity": "Booking",
+    "api": "/api/bookings",
+    "listColumns": ["id", "client_name", "service_name", "staff_name", "start_time", "status"],
+    "fields": [
+      { "name": "client_id", "type": "select", "label": "Customer", "source": "clients", "required": true },
+      { "name": "service_id", "type": "select", "label": "Service", "source": "services", "required": true },
+      { "name": "staff_id", "type": "select", "label": "Staff", "source": "staff" },
+      { "name": "start_time", "type": "datetime", "label": "Start time", "required": true },
+      { "name": "end_time", "type": "datetime", "label": "End time", "required": true },
+      { "name": "status", "type": "select", "label": "Status", "options": ["pending", "confirmed", "in_progress", "completed", "cancelled", "no_show"] },
+      { "name": "notes", "type": "textarea", "label": "Notes" }
+    ],
+    "permissions": {
+      "list": "booking:read",
+      "create": "booking:create",
+      "edit": "booking:update",
+      "delete": "booking:delete"
+    }
+  },
+
+  "services": {
+    "title": "Services",
+    "entity": "Service",
+    "api": "/api/services",
+    "listColumns": ["name", "category", "duration_minutes", "price_cents", "currency", "active"],
+    "fields": [
+      { "name": "name", "type": "text", "label": "Service name", "required": true },
+      { "name": "category_id", "type": "select", "label": "Category", "source": "service_categories" },
+      { "name": "description", "type": "textarea", "label": "Description" },
+      { "name": "duration_minutes", "type": "number", "label": "Duration (min)", "required": true },
+      { "name": "price_cents", "type": "number", "label": "Price (cents)", "required": true },
+      { "name": "currency", "type": "text", "label": "Currency", "default": "GBP" },
+      { "name": "notes", "type": "textarea", "label": "Internal notes" },
+      { "name": "active", "type": "boolean", "label": "Active", "default": true }
+    ],
+    "permissions": {
+      "list": "service:read",
+      "create": "service:create",
+      "edit": "service:update",
+      "delete": "service:delete"
+    }
+  },
+
+  "staff": {
+    "title": "Staff Members",
+    "entity": "StaffMember",
+    "api": "/api/staff",
+    "listColumns": ["full_name", "role", "email", "phone", "status"],
+    "fields": [
+      { "name": "full_name", "type": "text", "label": "Full name", "required": true },
+      { "name": "role", "type": "select", "label": "Role", "options": ["therapist", "doctor", "technician", "receptionist", "driver", "manager", "admin"] },
+      { "name": "email", "type": "email", "label": "Email" },
+      { "name": "phone", "type": "text", "label": "Phone" },
+      { "name": "bio", "type": "textarea", "label": "Bio" },
+      { "name": "status", "type": "select", "label": "Status", "options": ["active", "inactive", "on_leave"] }
+    ],
+    "permissions": {
+      "list": "staff:read",
+      "create": "staff:create",
+      "edit": "staff:update",
+      "delete": "staff:delete"
+    }
+  },
+
+  "payments": {
+    "title": "Payment Transactions",
+    "entity": "PaymentTransaction",
+    "api": "/api/payments/transactions",
+    "readonly": true,
+    "listColumns": ["id", "booking_id", "amount_cents", "status", "payment_method", "created_at"],
+    "fields": [
+      { "name": "booking_id", "type": "text", "label": "Booking ID", "readonly": true },
+      { "name": "amount_cents", "type": "number", "label": "Amount (cents)", "readonly": true },
+      { "name": "status", "type": "text", "label": "Status", "readonly": true },
+      { "name": "payment_method", "type": "text", "label": "Method", "readonly": true },
+      { "name": "created_at", "type": "text", "label": "Created", "readonly": true }
+    ],
+    "permissions": {
+      "list": "payment:read"
+    }
+  },
+
+  "tenants": {
+    "title": "Tenants",
+    "entity": "Tenant",
+    "api": "/api/tenants",
+    "listColumns": ["name", "subscription_plan", "status", "created_at"],
+    "fields": [
+      { "name": "name", "type": "text", "label": "Name", "required": true },
+      { "name": "subscription_plan", "type": "text", "label": "Plan", "required": true },
+      { "name": "status", "type": "select", "label": "Status", "options": ["active","suspended","trial","cancelled"], "required": true }
+    ],
+    "permissions": {
+      "list": "platform_admin",
+      "create": "platform_admin",
+      "edit": "platform_admin",
+      "delete": "platform_admin"
+    }
+  },
+
+  "subscriptions": {
+    "title": "Subscriptions",
+    "entity": "Subscription",
+    "api": "/api/subscriptions",
+    "listColumns": ["tenant_id", "plan", "status", "current_period_end"],
+    "fields": [
+      { "name": "tenant_id", "type": "text", "label": "Tenant ID", "required": true },
+      { "name": "plan", "type": "text", "label": "Plan", "required": true },
+      { "name": "status", "type": "select", "label": "Status", "options": ["active","trial","past_due","cancelled"], "required": true },
+      { "name": "current_period_end", "type": "datetime", "label": "Current Period End" }
+    ],
+    "permissions": {
+      "list": "platform_admin",
+      "create": "platform_admin",
+      "edit": "platform_admin",
+      "delete": "platform_admin"
+    }
+  }
+}

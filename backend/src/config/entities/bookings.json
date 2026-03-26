@@ -1,0 +1,12 @@
+{
+  "list": {
+    "columns": ["client_id", "service_id", "staff_id", "booking_date", "status"],
+    "searchable": ["client_id", "service_id"],
+    "sortable": ["booking_date", "created_at", "status"]
+  },
+  "actions": {
+    "create": true,
+    "edit": true,
+    "delete": false
+  }
+}

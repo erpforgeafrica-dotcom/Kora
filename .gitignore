@@ -1,0 +1,18 @@
+node_modules/
+dist/
+.env
+.env.local
+.DS_Store
+*.log
+frontend/.edge-clean-profile/
+backend/backend-live.log
+backend/backend-live.err.log
+backend/.tmp/
+backend/.npm-cache/
+
+# Playwright
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+/playwright/.auth/

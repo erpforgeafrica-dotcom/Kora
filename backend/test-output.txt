@@ -1,0 +1,837 @@
+
+> kora-backend@0.2.0 test
+> vitest run
+
+
+[1m[7m[36m RUN [39m[27m[22m [36mv2.1.9 [39m[90mC:/Users/hp/KORA/backend[39m
+
+POST /api/auth/register 201 471 - 11.214 ms
+POST /api/auth/login 200 468 - 4.120 ms
+ [32mΓ£ô[39m src/test/phase1b-contract-validation.test.ts[2m > [22mAPI Contract Validation - End-to-End[2m > [22mAuth Endpoints - Response Contracts[2m > [22mPOST /api/auth/register returns user object with required fields[33m 5592[2mms[22m[39m
+GET /api/auth/me 200 140 - 4.919 ms
+ [32mΓ£ô[39m src/test/phase1b-contract-validation.test.ts[2m > [22mAPI Contract Validation - End-to-End[2m > [22mAuth Endpoints - Response Contracts[2m > [22mPOST /api/auth/login returns tokens with correct types
+POST /api/auth/login 200 468 - 1.591 ms
+ [32mΓ£ô[39m src/test/phase1b-contract-validation.test.ts[2m > [22mAPI Contract Validation - End-to-End[2m > [22mAuth Endpoints - Response Contracts[2m > [22mGET /api/auth/me returns user context
+POST /api/auth/logout 200 52 - 1.799 ms
+GET /api/services 401 89 - 2.520 ms
+POST /api/auth/login 429 128 - 3.322 ms
+ [32mΓ£ô[39m src/test/phase1b-contract-validation.test.ts[2m > [22mAPI Contract Validation - End-to-End[2m > [22mAuth Endpoints - Response Contracts[2m > [22mPOST /api/auth/logout revokes session and prevents reuse
+ [32mΓ£ô[39m src/test/phase1b-contract-validation.test.ts[2m > [22mAPI Contract Validation - End-to-End[2m > [22mAuth Endpoints - Response Contracts[2m > [22mPOST /api/auth/login returns 429 when account locked
+GET /api/services?page=1&limit=10 200 383 - 6.430 ms
+GET /api/services/svc-001 200 338 - 4.597 ms
+ [31m├ù[39m src/test/phase1b-contract-validation.test.ts[2m > [22mAPI Contract Validation - End-to-End[2m > [22mServices Endpoints - Response Contracts[2m > [22mGET /api/services returns paginated list with metadata
+[31m   ΓåÆ expected false to be true // Object.is equality[39m
+GET /api/bookings 200 410 - 4.498 ms
+ [32mΓ£ô[39m src/test/phase1b-contract-validation.test.ts[2m > [22mAPI Contract Validation - End-to-End[2m > [22mServices Endpoints - Response Contracts[2m > [22mGET /api/services/:id returns single service object
+POST /api/bookings 201 284 - 2.302 ms
+ [31m├ù[39m src/test/phase1b-contract-validation.test.ts[2m > [22mAPI Contract Validation - End-to-End[2m > [22mBookings Endpoints - Response Contracts[2m > [22mGET /api/bookings returns list with context-aware filtering
+[31m   ΓåÆ expected { page: 1, limit: 500, total: 1, ΓÇª(1) } to match object { page: 1, limit: 20, total: 1, ΓÇª(1) }[39m
+POST /api/auth/register 422 86 - 2.097 ms
+GET /api/bookings 401 87 - 1.341 ms
+GET /api/services/nonexistent 404 84 - 3.752 ms
+ [32mΓ£ô[39m src/test/phase1b-contract-validation.test.ts[2m > [22mAPI Contract Validation - End-to-End[2m > [22mBookings Endpoints - Response Contracts[2m > [22mPOST /api/bookings returns created booking with required fields
+ [32mΓ£ô[39m src/test/phase1b-contract-validation.test.ts[2m > [22mAPI Contract Validation - End-to-End[2m > [22mError Response Contracts[2m > [22m422 Bad Request returns error with message and code
+ [32mΓ£ô[39m src/test/phase1b-contract-validation.test.ts[2m > [22mAPI Contract Validation - End-to-End[2m > [22mError Response Contracts[2m > [22m401 Unauthorized returns error consistent format
+GET /api/services 500 79 - 4.753 ms
+ [32mΓ£ô[39m src/test/phase1b-contract-validation.test.ts[2m > [22mAPI Contract Validation - End-to-End[2m > [22mError Response Contracts[2m > [22m404 Not Found returns error with message
+[90mstdout[2m | src/test/phase1b-contract-validation.test.ts[2m > [22m[2mAPI Contract Validation - End-to-End[2m > [22m[2mError Response Contracts[2m > [22m[2m500 Server Error returns error with message
+[22m[39m[ERROR] 2026-03-26T00:54:11.391Z Server error {"timestamp":"2026-03-26T00:54:11.391Z","statusCode":500,"code":"INTERNAL_SERVER_ERROR","message":"DB error","path":"/api/services","method":"GET","ip":"::ffff:127.0.0.1","userId":"user-001","organizationId":"org-001"}
+
+GET /api/services?page=1&limit=10 200 81 - 3.236 ms
+GET /api/services?page=1&limit=10 200 81 - 4.125 ms
+ [32mΓ£ô[39m src/test/phase1b-contract-validation.test.ts[2m > [22mAPI Contract Validation - End-to-End[2m > [22mError Response Contracts[2m > [22m500 Server Error returns error with message
+ [31m├ù[39m src/test/phase1b-contract-validation.test.ts[2m > [22mAPI Contract Validation - End-to-End[2m > [22mPagination Contract[2m > [22mList endpoints return pagination metadata
+[31m   ΓåÆ expected false to be true // Object.is equality[39m
+ [32mΓ£ô[39m src/test/phase1b-contract-validation.test.ts[2m > [22mAPI Contract Validation - End-to-End[2m > [22mPagination Contract[2m > [22mPage parameter are validated
+POST /api/staff 201 542 - 33.447 ms
+ [32mΓ£ô[39m src/test/phase1c-integration.test.ts[2m > [22mPhase 1C: Staff Management[2m > [22mPOST /api/staff - Create staff member
+GET /api/staff 200 544 - 13.237 ms
+ [32mΓ£ô[39m src/test/phase1c-integration.test.ts[2m > [22mPhase 1C: Staff Management[2m > [22mGET /api/staff - List staff members
+GET /api/staff/7bc3e6b2-ca94-413b-adeb-18f4e6a32be6 200 568 - 18.088 ms
+ [32mΓ£ô[39m src/test/phase1c-integration.test.ts[2m > [22mPhase 1C: Staff Management[2m > [22mGET /api/staff/:id - Get staff details
+PATCH /api/staff/7bc3e6b2-ca94-413b-adeb-18f4e6a32be6 200 563 - 15.316 ms
+POST /api/staff 201 483 - 6.706 ms
+ [32mΓ£ô[39m src/test/phase1c-integration.test.ts[2m > [22mPhase 1C: Staff Management[2m > [22mPATCH /api/staff/:id - Update staff member
+ [32mΓ£ô[39m src/test/phase1c-integration.test.ts[2m > [22mPhase 1C: Staff Management[2m > [22mPOST /api/staff - Create second staff member
+GET /api/staff?role=practitioner 200 565 - 7.468 ms
+ [32mΓ£ô[39m src/test/phase1c-integration.test.ts[2m > [22mPhase 1C: Staff Management[2m > [22mGET /api/staff?role=practitioner - Filter by role
+GET /api/staff?status=active 200 1013 - 8.266 ms
+ [32mΓ£ô[39m src/test/phase1c-integration.test.ts[2m > [22mPhase 1C: Staff Management[2m > [22mGET /api/staff?status=active - Filter by status
+POST /api/staff/7bc3e6b2-ca94-413b-adeb-18f4e6a32be6/skills 201 276 - 10.463 ms
+GET /api/staff/7bc3e6b2-ca94-413b-adeb-18f4e6a32be6/skills 200 278 - 7.804 ms
+ [32mΓ£ô[39m src/test/phase1c-integration.test.ts[2m > [22mPhase 1C: Staff Skills[2m > [22mPOST /api/staff/:id/skills - Add skill
+ [32mΓ£ô[39m src/test/phase1c-integration.test.ts[2m > [22mPhase 1C: Staff Skills[2m > [22mGET /api/staff/:id/skills - List skills
+POST /api/staff/7bc3e6b2-ca94-413b-adeb-18f4e6a32be6/skills 201 274 - 13.162 ms
+GET /api/staff/7bc3e6b2-ca94-413b-adeb-18f4e6a32be6/skills 200 517 - 13.496 ms
+ [32mΓ£ô[39m src/test/phase1c-integration.test.ts[2m > [22mPhase 1C: Staff Skills[2m > [22mPOST /api/staff/:id/skills - Add multiple skills
+POST /api/staff/7bc3e6b2-ca94-413b-adeb-18f4e6a32be6/services 201 339 - 10.826 ms
+GET /api/staff/7bc3e6b2-ca94-413b-adeb-18f4e6a32be6/services 200 341 - 7.139 ms
+ [32mΓ£ô[39m src/test/phase1c-integration.test.ts[2m > [22mPhase 1C: Service Assignments[2m > [22mPOST /api/staff/:id/services - Assign service
+DELETE /api/staff/7bc3e6b2-ca94-413b-adeb-18f4e6a32be6/services/00000000-0000-0000-0000-000000000001 200 96 - 6.257 ms
+ [32mΓ£ô[39m src/test/phase1c-integration.test.ts[2m > [22mPhase 1C: Service Assignments[2m > [22mGET /api/staff/:id/services - List assigned services
+ [32mΓ£ô[39m src/test/phase1c-integration.test.ts[2m > [22mPhase 1C: Service Assignments[2m > [22mDELETE /api/staff/:id/services/:serviceId - Remove service assignment
+PUT /api/staff/7bc3e6b2-ca94-413b-adeb-18f4e6a32be6/availability/rules 200 374 - 11.175 ms
+ [32mΓ£ô[39m src/test/phase1c-integration.test.ts[2m > [22mPhase 1C: Availability Rules[2m > [22mPUT /api/staff/:id/availability/rules - Create availability rule
+GET /api/staff/7bc3e6b2-ca94-413b-adeb-18f4e6a32be6/availability/rules 200 376 - 8.758 ms
+ [32mΓ£ô[39m src/test/phase1c-integration.test.ts[2m > [22mPhase 1C: Availability Rules[2m > [22mGET /api/staff/:id/availability/rules - List rules
+PUT /api/staff/7bc3e6b2-ca94-413b-adeb-18f4e6a32be6/availability/rules 200 363 - 11.610 ms
+ [32mΓ£ô[39m src/test/phase1c-integration.test.ts[2m > [22mPhase 1C: Availability Rules[2m > [22mPUT /api/staff/:id/availability/rules - Update rule for different day
+POST /api/staff/7bc3e6b2-ca94-413b-adeb-18f4e6a32be6/availability/exceptions 201 361 - 12.871 ms
+ [32mΓ£ô[39m src/test/phase1c-integration.test.ts[2m > [22mPhase 1C: Availability Exceptions[2m > [22mPOST /api/staff/:id/availability/exceptions - Add holiday
+POST /api/staff/7bc3e6b2-ca94-413b-adeb-18f4e6a32be6/availability/exceptions 201 365 - 10.765 ms
+GET /api/staff/7bc3e6b2-ca94-413b-adeb-18f4e6a32be6/availability/exceptions 200 693 - 7.345 ms
+ [32mΓ£ô[39m src/test/phase1c-integration.test.ts[2m > [22mPhase 1C: Availability Exceptions[2m > [22mPOST /api/staff/:id/availability/exceptions - Add day off
+GET /api/staff/7bc3e6b2-ca94-413b-adeb-18f4e6a32be6/available-slots?date=2026-03-27 200 67 - 8.168 ms
+ [32mΓ£ô[39m src/test/phase1c-integration.test.ts[2m > [22mPhase 1C: Availability Exceptions[2m > [22mGET /api/staff/:id/availability/exceptions - List exceptions
+ [32mΓ£ô[39m src/test/phase1c-integration.test.ts[2m > [22mPhase 1C: Availability Queries[2m > [22mGET /api/staff/:id/available-slots?date=YYYY-MM-DD - Get available slots
+GET /api/staff/7bc3e6b2-ca94-413b-adeb-18f4e6a32be6/day-schedule?date=2026-03-27 200 475 - 14.907 ms
+GET /api/staff/7bc3e6b2-ca94-413b-adeb-18f4e6a32be6/conflicts 200 67 - 5.864 ms
+ [32mΓ£ô[39m src/test/phase1c-integration.test.ts[2m > [22mPhase 1C: Availability Queries[2m > [22mGET /api/staff/:id/day-schedule?date=YYYY-MM-DD - Get day schedule
+POST /api/staff/7bc3e6b2-ca94-413b-adeb-18f4e6a32be6/check-availability 200 90 - 5.914 ms
+ [32mΓ£ô[39m src/test/phase1c-integration.test.ts[2m > [22mPhase 1C: Availability Queries[2m > [22mGET /api/staff/:id/conflicts - List conflicts
+POST /api/bookings 201 389 - 11.206 ms
+ [32mΓ£ô[39m src/test/phase1c-integration.test.ts[2m > [22mPhase 1C: Availability Queries[2m > [22mPOST /api/staff/:id/check-availability - Check time window
+POST /api/bookings/9a37fe21-9986-4342-93fa-dcae081e3c0c/assign-staff/7bc3e6b2-ca94-413b-adeb-18f4e6a32be6 201 284 - 43.600 ms
+GET /api/bookings/9a37fe21-9986-4342-93fa-dcae081e3c0c/assignments 200 400 - 8.798 ms
+ [32mΓ£ô[39m src/test/phase1c-integration.test.ts[2m > [22mPhase 1C: Booking-to-Staff Workflow[2m > [22mPOST /api/bookings/:bookingId/assign-staff/:staffId - Assign staff
+PATCH /api/bookings/9a37fe21-9986-4342-93fa-dcae081e3c0c/assignments/6cf310b7-d86c-4db7-a735-c756143dcbd8/confirm 200 183 - 8.938 ms
+ [32mΓ£ô[39m src/test/phase1c-integration.test.ts[2m > [22mPhase 1C: Booking-to-Staff Workflow[2m > [22mGET /api/bookings/:bookingId/assignments - Get assignments
+ [32mΓ£ô[39m src/test/phase1c-integration.test.ts[2m > [22mPhase 1C: Booking-to-Staff Workflow[2m > [22mPATCH /api/bookings/:bookingId/assignments/:assignmentId/confirm - Confirm assignment
+POST /api/bookings/9a37fe21-9986-4342-93fa-dcae081e3c0c/staff-preferences 201 234 - 10.018 ms
+ [32mΓ£ô[39m src/test/phase1c-integration.test.ts[2m > [22mPhase 1C: Booking-to-Staff Workflow[2m > [22mPOST /api/bookings/:bookingId/staff-preferences - Add preference
+GET /api/bookings/00000000-0000-0000-0000-000000000002/staff-preferences 200 298 - 8.720 ms
+POST /api/bookings/waitlist/add 201 284 - 9.038 ms
+ [32mΓ£ô[39m src/test/phase1c-integration.test.ts[2m > [22mPhase 1C: Booking-to-Staff Workflow[2m > [22mGET /api/bookings/:customerId/staff-preferences - Get preferences
+GET /api/bookings/waitlist 200 426 - 6.643 ms
+ [32mΓ£ô[39m src/test/phase1c-integration.test.ts[2m > [22mPhase 1C: Booking-to-Staff Workflow[2m > [22mPOST /api/bookings/waitlist/add - Add to waitlist
+GET /api/bookings/waitlist?status=waiting 200 426 - 7.962 ms
+ [32mΓ£ô[39m src/test/phase1c-integration.test.ts[2m > [22mPhase 1C: Booking-to-Staff Workflow[2m > [22mGET /api/bookings/waitlist - List waitlist
+ [32mΓ£ô[39m src/test/phase1c-integration.test.ts[2m > [22mPhase 1C: Booking-to-Staff Workflow[2m > [22mGET /api/bookings/waitlist?status=waiting - Filter by status
+POST /api/bookings/shifts/add 201 253 - 9.911 ms
+GET /api/bookings/staff/7bc3e6b2-ca94-413b-adeb-18f4e6a32be6/shifts 200 308 - 6.284 ms
+ [32mΓ£ô[39m src/test/phase1c-integration.test.ts[2m > [22mPhase 1C: Booking-to-Staff Workflow[2m > [22mPOST /api/bookings/shifts/add - Add shift
+GET /api/bookings/staff/7bc3e6b2-ca94-413b-adeb-18f4e6a32be6/shifts?date=2026-03-27 200 308 - 5.260 ms
+ [32mΓ£ô[39m src/test/phase1c-integration.test.ts[2m > [22mPhase 1C: Booking-to-Staff Workflow[2m > [22mGET /api/bookings/staff/:staffId/shifts - Get shifts
+ [32mΓ£ô[39m src/test/phase1c-integration.test.ts[2m > [22mPhase 1C: Booking-to-Staff Workflow[2m > [22mGET /api/bookings/staff/:staffId/shifts?date=YYYY-MM-DD - Filter by date
+DELETE /api/staff/16596392-0988-4b08-b345-29398b9155c5 200 101 - 8.980 ms
+GET /api/staff?status=archived 200 487 - 5.346 ms
+ [32mΓ£ô[39m src/test/phase1c-integration.test.ts[2m > [22mPhase 1C: Staff Archival[2m > [22mDELETE /api/staff/:id - Archive staff member
+ [32mΓ£ô[39m src/test/phase1c-integration.test.ts[2m > [22mPhase 1C: Staff Archival[2m > [22mGET /api/staff?status=archived - Filter archived staff
+ [32mΓ£ô[39m src/test/workflow.test.ts[2m > [22mWorkflowEngine[2m > [22mtransitionState[2m > [22mcreates an initial workflow state row and returns from/to state
+ [32mΓ£ô[39m src/test/workflow.test.ts[2m > [22mWorkflowEngine[2m > [22mtransitionState[2m > [22mcreates an initial workflow state row and returns from/to state
+ [32mΓ£ô[39m src/test/workflow.test.ts[2m > [22mWorkflowEngine[2m > [22mtransitionState[2m > [22mrecords transitions with triggered_by stored as text
+ [32mΓ£ô[39m src/test/workflow.test.ts[2m > [22mWorkflowEngine[2m > [22mtransitionState[2m > [22mrecords transitions with triggered_by stored as text
+ [32mΓ£ô[39m src/test/workflow.test.ts[2m > [22mWorkflowEngine[2m > [22mtransitionState[2m > [22mupdates workflow_states deterministically across sequential transitions
+ [32mΓ£ô[39m src/test/workflow.test.ts[2m > [22mWorkflowEngine[2m > [22mtransitionState[2m > [22mupdates workflow_states deterministically across sequential transitions
+ [32mΓ£ô[39m src/test/workflow.test.ts[2m > [22mWorkflowEngine[2m > [22mgetTransitionHistory[2m > [22mreturns transitions newest-first for the entity
+ [32mΓ£ô[39m src/test/workflow.test.ts[2m > [22mWorkflowEngine[2m > [22mgetTransitionHistory[2m > [22mreturns transitions newest-first for the entity
+ [32mΓ£ô[39m src/test/workflow.test.ts[2m > [22mSubscriptionWorkflow[2m > [22mreturns the joined workflow state instead of subscriptions.current_state
+ [32mΓ£ô[39m src/test/workflow.test.ts[2m > [22mSubscriptionWorkflow[2m > [22mreturns the joined workflow state instead of subscriptions.current_state
+ [32mΓ£ô[39m src/test/workflow.test.ts[2m > [22mSubscriptionWorkflow[2m > [22mactivates a subscription from trialing and updates workflow_states
+ [32mΓ£ô[39m src/test/workflow.test.ts[2m > [22mSubscriptionWorkflow[2m > [22mactivates a subscription from trialing and updates workflow_states
+ [32mΓ£ô[39m src/test/workflow.test.ts[2m > [22mSubscriptionWorkflow[2m > [22mrecords transition history for canonical workflow changes
+ [32mΓ£ô[39m src/test/workflow.test.ts[2m > [22mSubscriptionWorkflow[2m > [22mrecords transition history for canonical workflow changes
+ [32mΓ£ô[39m src/test/workflow.test.ts[2m > [22mSubscriptionWorkflow[2m > [22mmoves active subscriptions to past_due and increments failed attempts
+ [32mΓ£ô[39m src/test/workflow.test.ts[2m > [22mSubscriptionWorkflow[2m > [22mmoves active subscriptions to past_due and increments failed attempts
+ [32mΓ£ô[39m src/test/workflow.test.ts[2m > [22mSubscriptionWorkflow[2m > [22mreactivates past_due subscriptions back to active
+ [32mΓ£ô[39m src/test/workflow.test.ts[2m > [22mSubscriptionWorkflow[2m > [22mreactivates past_due subscriptions back to active
+ [32mΓ£ô[39m src/test/workflow.test.ts[2m > [22mSubscriptionWorkflow[2m > [22mcancels active subscriptions and then expires cancelled subscriptions
+ [32mΓ£ô[39m src/test/workflow.test.ts[2m > [22mSubscriptionWorkflow[2m > [22mcancels active subscriptions and then expires cancelled subscriptions
+ [32mΓ£ô[39m src/test/workflow.test.ts[2m > [22mSubscriptionWorkflow[2m > [22mrejects invalid transitions with a 422 workflow error
+ [32mΓ£ô[39m src/test/workflow.test.ts[2m > [22mSubscriptionWorkflow[2m > [22mrejects invalid transitions with a 422 workflow error
+ [32mΓ£ô[39m src/test/workflow.test.ts[2m > [22mSubscriptionWorkflow[2m > [22mvalidateTransition only allows the canonical transition map
+ [32mΓ£ô[39m src/test/workflow.test.ts[2m > [22mSubscriptionWorkflow[2m > [22mvalidateTransition only allows the canonical transition map
+ [32mΓ£ô[39m src/test/workflow.test.ts[2m > [22mSubscriptionWorkflow[2m > [22minitializeSubscription seeds workflow_states when a subscription has no workflow row
+ [32mΓ£ô[39m src/test/workflow.test.ts[2m > [22mSubscriptionWorkflow[2m > [22minitializeSubscription seeds workflow_states when a subscription has no workflow row
+POST /api/payments/intent 201 180 - 84.956 ms
+ [32mΓ£ô[39m src/test/phase2-payments-extended.test.ts[2m > [22mPhase 2 ΓÇö Payments Module (Extended)[2m > [22mPOST /api/payments/intent[2m > [22mshould create Stripe payment intent[33m 379[2mms[22m[39m
+POST /api/payments/intent 201 187 - 1.693 ms
+ [32mΓ£ô[39m src/test/phase2-payments-extended.test.ts[2m > [22mPhase 2 ΓÇö Payments Module (Extended)[2m > [22mPOST /api/payments/intent[2m > [22mshould create PayPal payment intent
+POST /api/payments/intent 201 187 - 1.559 ms
+ [32mΓ£ô[39m src/test/phase2-payments-extended.test.ts[2m > [22mPhase 2 ΓÇö Payments Module (Extended)[2m > [22mPOST /api/payments/intent[2m > [22mshould create Flutterwave payment intent
+POST /api/payments/intent 201 182 - 6.205 ms
+ [32mΓ£ô[39m src/test/phase2-payments-extended.test.ts[2m > [22mPhase 2 ΓÇö Payments Module (Extended)[2m > [22mPOST /api/payments/intent[2m > [22mshould create Paystack payment intent
+POST /api/payments/intent 400 114 - 5.285 ms
+ [32mΓ£ô[39m src/test/phase2-payments-extended.test.ts[2m > [22mPhase 2 ΓÇö Payments Module (Extended)[2m > [22mPOST /api/payments/intent[2m > [22mshould return 422 for missing required fields
+POST /api/payments/intent 201 182 - 1.323 ms
+POST /api/payments/confirm 200 185 - 9.467 ms
+ [32mΓ£ô[39m src/test/phase2-payments-extended.test.ts[2m > [22mPhase 2 ΓÇö Payments Module (Extended)[2m > [22mPOST /api/payments/intent[2m > [22mshould return 422 for invalid currency
+ [32mΓ£ô[39m src/test/phase2-payments-extended.test.ts[2m > [22mPhase 2 ΓÇö Payments Module (Extended)[2m > [22mPOST /api/payments/intent/:id/confirm[2m > [22mshould confirm payment successfully
+POST /api/payments/confirm 200 185 - 1.048 ms
+ [32mΓ£ô[39m src/test/phase2-payments-extended.test.ts[2m > [22mPhase 2 ΓÇö Payments Module (Extended)[2m > [22mPOST /api/payments/intent/:id/confirm[2m > [22mshould handle payment confirmation failure
+GET /api/payments/transactions?page=1&limit=20 200 235 - 5.380 ms
+ [32mΓ£ô[39m src/test/phase2-payments-extended.test.ts[2m > [22mPhase 2 ΓÇö Payments Module (Extended)[2m > [22mGET /api/payments/transactions[2m > [22mshould list transactions with pagination
+GET /api/payments/transactions?status=succeeded 200 197 - 4.114 ms
+ [32mΓ£ô[39m src/test/phase2-payments-extended.test.ts[2m > [22mPhase 2 ΓÇö Payments Module (Extended)[2m > [22mGET /api/payments/transactions[2m > [22mshould filter transactions by status
+GET /api/payments/transactions?from_date=2024-01-01&to_date=2024-01-31 200 80 - 3.623 ms
+POST /api/payments/refund 201 171 - 1.691 ms
+ [32mΓ£ô[39m src/test/phase2-payments-extended.test.ts[2m > [22mPhase 2 ΓÇö Payments Module (Extended)[2m > [22mGET /api/payments/transactions[2m > [22mshould filter transactions by date range
+POST /api/payments/refund 201 171 - 1.975 ms
+ [32mΓ£ô[39m src/test/phase2-payments-extended.test.ts[2m > [22mPhase 2 ΓÇö Payments Module (Extended)[2m > [22mPOST /api/payments/refund[2m > [22mshould create full refund
+POST /api/payments/refund 201 81 - 1.140 ms
+ [32mΓ£ô[39m src/test/phase2-payments-extended.test.ts[2m > [22mPhase 2 ΓÇö Payments Module (Extended)[2m > [22mPOST /api/payments/refund[2m > [22mshould create partial refund
+ [32mΓ£ô[39m src/test/phase2-payments-extended.test.ts[2m > [22mPhase 2 ΓÇö Payments Module (Extended)[2m > [22mPOST /api/payments/refund[2m > [22mshould reject refund for non-existent transaction
+GET /api/payments/rcm 500 105 - 143.762 ms
+[90mstdout[2m | src/test/phase2-payments-extended.test.ts[2m > [22m[2mPhase 2 ΓÇö Payments Module (Extended)[2m > [22m[2mGET /api/payments/revenue/summary[2m > [22m[2mshould return monthly revenue summary
+[22m[39m[ERROR] 2026-03-26T00:54:23.887Z Query failed {"queryId":"y2rwhaihn","duration":134,"error":"invalid input syntax for type uuid: \"org-1\"","text":"select id::text, organization_id::text, booking_id::text, client_id::text, amount_cents, currency, status, payment_method, receipt_url, created_at::text, processed_at::text\n         from transactions\n","params":2}
+[ERROR] 2026-03-26T00:54:23.891Z Server error {"timestamp":"2026-03-26T00:54:23.891Z","statusCode":500,"code":"22P02","message":"invalid input syntax for type uuid: \"org-1\"","path":"/api/payments/rcm","method":"GET","ip":"::ffff:127.0.0.1","userId":"test-user","organizationId":"org-1"}
+
+ [32mΓ£ô[39m src/test/phase2-payments-extended.test.ts[2m > [22mPhase 2 ΓÇö Payments Module (Extended)[2m > [22mGET /api/payments/revenue/summary[2m > [22mshould return monthly revenue summary
+GET /api/payments/rcm 500 105 - 197.890 ms
+[90mstdout[2m | src/test/phase2-payments-extended.test.ts[2m > [22m[2mPhase 2 ΓÇö Payments Module (Extended)[2m > [22m[2mGET /api/payments/revenue/summary[2m > [22m[2mshould return quarterly revenue summary
+[22m[39m[ERROR] 2026-03-26T00:54:24.105Z Query failed {"queryId":"n0agysi9m","duration":193,"error":"invalid input syntax for type uuid: \"org-1\"","text":"select id::text, organization_id::text, booking_id::text, client_id::text, amount_cents, currency, status, payment_method, receipt_url, created_at::text, processed_at::text\n         from transactions\n","params":2}
+[ERROR] 2026-03-26T00:54:24.105Z Server error {"timestamp":"2026-03-26T00:54:24.105Z","statusCode":500,"code":"22P02","message":"invalid input syntax for type uuid: \"org-1\"","path":"/api/payments/rcm","method":"GET","ip":"::ffff:127.0.0.1","userId":"test-user","organizationId":"org-1"}
+
+GET /api/payments/methods/test-user 200 209 - 2.915 ms
+ [32mΓ£ô[39m src/test/phase2-payments-extended.test.ts[2m > [22mPhase 2 ΓÇö Payments Module (Extended)[2m > [22mGET /api/payments/revenue/summary[2m > [22mshould return quarterly revenue summary
+ [32mΓ£ô[39m src/test/phase2-payments-extended.test.ts[2m > [22mPhase 2 ΓÇö Payments Module (Extended)[2m > [22mGET /api/payments/methods[2m > [22mshould list payment methods for user
+GET /api/payments/methods/test-user 200 80 - 1.590 ms
+ [32mΓ£ô[39m src/test/phase2-payments-extended.test.ts[2m > [22mPhase 2 ΓÇö Payments Module (Extended)[2m > [22mGET /api/payments/methods[2m > [22mshould return empty list if no payment methods
+POST /api/payments/refund 201 81 - 1.355 ms
+ [32mΓ£ô[39m src/test/phase2-payments-extended.test.ts[2m > [22mPhase 2 ΓÇö Payments Module (Extended)[2m > [22mRBAC: Payment operations[2m > [22mstaff cannot create refunds
+GET /api/payments/rcm 500 105 - 58.921 ms
+[90mstdout[2m | src/test/phase2-payments-extended.test.ts[2m > [22m[2mPhase 2 ΓÇö Payments Module (Extended)[2m > [22m[2mRBAC: Payment operations[2m > [22m[2mcustomer cannot view business revenue
+[22m[39m[ERROR] 2026-03-26T00:54:24.239Z Query failed {"queryId":"kelltgxy2","duration":52,"error":"invalid input syntax for type uuid: \"org-1\"","text":"select id::text, organization_id::text, booking_id::text, client_id::text, amount_cents, currency, status, payment_method, receipt_url, created_at::text, processed_at::text\n         from transactions\n","params":2}
+[ERROR] 2026-03-26T00:54:24.240Z Server error {"timestamp":"2026-03-26T00:54:24.240Z","statusCode":500,"code":"22P02","message":"invalid input syntax for type uuid: \"org-1\"","path":"/api/payments/rcm","method":"GET","ip":"::ffff:127.0.0.1","userId":"test-user","organizationId":"org-1"}
+
+POST /api/payments/intent 201 182 - 1.340 ms
+ [32mΓ£ô[39m src/test/phase2-payments-extended.test.ts[2m > [22mPhase 2 ΓÇö Payments Module (Extended)[2m > [22mRBAC: Payment operations[2m > [22mcustomer cannot view business revenue
+POST /api/payments/intent 400 114 - 1.392 ms
+ [32mΓ£ô[39m src/test/phase2-payments-extended.test.ts[2m > [22mPhase 2 ΓÇö Payments Module (Extended)[2m > [22mRBAC: Payment operations[2m > [22munauthenticated request returns 401
+POST /api/payments/intent 400 114 - 1.343 ms
+ [32mΓ£ô[39m src/test/phase2-payments-extended.test.ts[2m > [22mPhase 2 ΓÇö Payments Module (Extended)[2m > [22mPayment Validation[2m > [22mshould reject negative amounts
+ [32mΓ£ô[39m src/test/phase2-payments-extended.test.ts[2m > [22mPhase 2 ΓÇö Payments Module (Extended)[2m > [22mPayment Validation[2m > [22mshould reject zero amount
+POST /api/payments/intent 201 182 - 1.113 ms
+ [32mΓ£ô[39m src/test/phase2-payments-extended.test.ts[2m > [22mPhase 2 ΓÇö Payments Module (Extended)[2m > [22mPayment Validation[2m > [22mshould validate gateway name
+ [32mΓ£ô[39m src/test/phase2-production-hardening.test.ts[2m > [22mProduction Hardening - Phase 2[2m > [22mRequest Validation (Zod Schemas)[2m > [22mshould validate request body with validateBody middleware
+ [32mΓ£ô[39m src/test/phase2-production-hardening.test.ts[2m > [22mProduction Hardening - Phase 2[2m > [22mRequest Validation (Zod Schemas)[2m > [22mshould reject invalid request body
+ [32mΓ£ô[39m src/test/phase2-production-hardening.test.ts[2m > [22mProduction Hardening - Phase 2[2m > [22mRequest Validation (Zod Schemas)[2m > [22mshould validate query parameters with validateQuery middleware
+ [32mΓ£ô[39m src/test/phase2-production-hardening.test.ts[2m > [22mProduction Hardening - Phase 2[2m > [22mRequest Validation (Zod Schemas)[2m > [22mshould reject invalid query parameters
+ [32mΓ£ô[39m src/test/phase2-production-hardening.test.ts[2m > [22mProduction Hardening - Phase 2[2m > [22mEnhanced Error Handler[2m > [22mshould handle ValidationError with 422 status
+ [32mΓ£ô[39m src/test/phase2-production-hardening.test.ts[2m > [22mProduction Hardening - Phase 2[2m > [22mEnhanced Error Handler[2m > [22mshould handle NotFoundError with 404 status
+[90mstdout[2m | src/test/phase2-production-hardening.test.ts[2m > [22m[2mProduction Hardening - Phase 2[2m > [22m[2mEnhanced Error Handler[2m > [22m[2mshould handle InternalServerError with 500 status
+[22m[39m[ERROR] 2026-03-26T00:54:29.258Z Server error {"timestamp":"2026-03-26T00:54:29.257Z","statusCode":500,"code":"INTERNAL_SERVER_ERROR","message":"Database connection failed","path":"/test","method":"GET","ip":"::ffff:127.0.0.1","organizationId":"unknown"}
+
+ [32mΓ£ô[39m src/test/phase2-production-hardening.test.ts[2m > [22mProduction Hardening - Phase 2[2m > [22mEnhanced Error Handler[2m > [22mshould handle UnauthorizedError with 401 status
+ [32mΓ£ô[39m src/test/phase2-production-hardening.test.ts[2m > [22mProduction Hardening - Phase 2[2m > [22mEnhanced Error Handler[2m > [22mshould handle ForbiddenError with 403 status
+ [32mΓ£ô[39m src/test/phase2-production-hardening.test.ts[2m > [22mProduction Hardening - Phase 2[2m > [22mEnhanced Error Handler[2m > [22mshould handle ConflictError with 409 status
+ [32mΓ£ô[39m src/test/phase2-production-hardening.test.ts[2m > [22mProduction Hardening - Phase 2[2m > [22mEnhanced Error Handler[2m > [22mshould handle InternalServerError with 500 status
+ [32mΓ£ô[39m src/test/phase2-production-hardening.test.ts[2m > [22mProduction Hardening - Phase 2[2m > [22mEnhanced Error Handler[2m > [22mshould wrap async errors with asyncHandler
+ [32mΓ£ô[39m src/test/phase2-production-hardening.test.ts[2m > [22mProduction Hardening - Phase 2[2m > [22mAPI Versioning[2m > [22mshould extract API version from header
+ [32mΓ£ô[39m src/test/phase2-production-hardening.test.ts[2m > [22mProduction Hardening - Phase 2[2m > [22mAPI Versioning[2m > [22mshould extract API version from query parameter
+ [32mΓ£ô[39m src/test/phase2-production-hardening.test.ts[2m > [22mProduction Hardening - Phase 2[2m > [22mAPI Versioning[2m > [22mshould use default version when not specified
+ [32mΓ£ô[39m src/test/phase2-production-hardening.test.ts[2m > [22mProduction Hardening - Phase 2[2m > [22mAPI Versioning[2m > [22mshould reject unsupported API version
+ [32mΓ£ô[39m src/test/phase2-production-hardening.test.ts[2m > [22mProduction Hardening - Phase 2[2m > [22mAPI Versioning[2m > [22mshould set API-Version response header
+ [32mΓ£ô[39m src/test/phase2-production-hardening.test.ts[2m > [22mProduction Hardening - Phase 2[2m > [22mAPI Versioning[2m > [22mshould warn about deprecated versions
+ [32mΓ£ô[39m src/test/phase2-production-hardening.test.ts[2m > [22mProduction Hardening - Phase 2[2m > [22mRate Limiting[2m > [22mshould have rate limiter configured
+ [32mΓ£ô[39m src/test/phase2-production-hardening.test.ts[2m > [22mProduction Hardening - Phase 2[2m > [22mRate Limiting[2m > [22mshould support API key validation
+ [32mΓ£ô[39m src/test/phase2-production-hardening.test.ts[2m > [22mProduction Hardening - Phase 2[2m > [22mDatabase Connection Pooling[2m > [22mshould have optimized pool configuration
+ [32mΓ£ô[39m src/test/phase2-production-hardening.test.ts[2m > [22mProduction Hardening - Phase 2[2m > [22mDatabase Connection Pooling[2m > [22mshould track query metrics
+ [32mΓ£ô[39m src/test/phase2-production-hardening.test.ts[2m > [22mProduction Hardening - Phase 2[2m > [22mValidation Schemas[2m > [22mshould export all validation schemas
+ [32mΓ£ô[39m src/test/phase2-production-hardening.test.ts[2m > [22mProduction Hardening - Phase 2[2m > [22mValidation Schemas[2m > [22mshould validate pagination schema
+ [32mΓ£ô[39m src/test/phase2-production-hardening.test.ts[2m > [22mProduction Hardening - Phase 2[2m > [22mValidation Schemas[2m > [22mshould validate UUID schema
+ [32mΓ£ô[39m src/test/phase2-production-hardening.test.ts[2m > [22mProduction Hardening - Phase 2[2m > [22mValidation Schemas[2m > [22mshould validate client creation schema
+GET /health 200 251 - 54.601 ms
+GET /api/docs 200 9437 - 2.841 ms
+ [32mΓ£ô[39m src/test/phase2-production-hardening.test.ts[2m > [22mProduction Hardening - Phase 2[2m > [22mIntegration: Full Production Hardening[2m > [22mshould have all hardening components in place
+GET /health 200 251 - 49.111 ms
+ [32mΓ£ô[39m src/test/qa-contract-enforcement.test.ts[2m > [22mQA: API Response Envelope Contract[2m > [22mGET /health returns status object (non-API, no envelope required)
+GET /api/bookings 200 1005 - 23.945 ms
+ [32mΓ£ô[39m src/test/qa-contract-enforcement.test.ts[2m > [22mQA: API Response Envelope Contract[2m > [22mGET /api/bookings returns success envelope
+GET /api/emergency/requests 200 1089 - 6.966 ms
+ [32mΓ£ô[39m src/test/qa-contract-enforcement.test.ts[2m > [22mQA: API Response Envelope Contract[2m > [22mGET /api/emergency/requests returns success envelope
+GET /api/delivery/bookings 200 1269 - 7.885 ms
+ [32mΓ£ô[39m src/test/qa-contract-enforcement.test.ts[2m > [22mQA: API Response Envelope Contract[2m > [22mGET /api/delivery/bookings returns success envelope
+GET /api/clinical/patients 200 82 - 5.862 ms
+GET /api/bookings 401 100 - 0.836 ms
+GET /api/bookings 403 68 - 3.301 ms
+ [32mΓ£ô[39m src/test/qa-contract-enforcement.test.ts[2m > [22mQA: API Response Envelope Contract[2m > [22mGET /api/clinical/patients returns success envelope
+ [32mΓ£ô[39m src/test/qa-contract-enforcement.test.ts[2m > [22mQA: Error Code Format Contract (UPPER_SNAKE_CASE)[2m > [22m401 response has UPPER_SNAKE_CASE code
+GET /api/nonexistent-route-xyz 404 177 - 1.866 ms
+POST /api/bookings 400 90 - 3.730 ms
+ [32mΓ£ô[39m src/test/qa-contract-enforcement.test.ts[2m > [22mQA: Error Code Format Contract (UPPER_SNAKE_CASE)[2m > [22m403 response has UPPER_SNAKE_CASE code
+ [32mΓ£ô[39m src/test/qa-contract-enforcement.test.ts[2m > [22mQA: Error Code Format Contract (UPPER_SNAKE_CASE)[2m > [22m404 on unknown API route has UPPER_SNAKE_CASE code
+GET /api/bookings 401 100 - 0.616 ms
+GET /api/bookings 403 68 - 3.011 ms
+GET /api/bookings 200 1005 - 7.177 ms
+ [32mΓ£ô[39m src/test/qa-contract-enforcement.test.ts[2m > [22mQA: Error Code Format Contract (UPPER_SNAKE_CASE)[2m > [22m400 validation error has UPPER_SNAKE_CASE code
+ [32mΓ£ô[39m src/test/qa-contract-enforcement.test.ts[2m > [22mQA: Auth Contract ΓÇö 401 vs 403[2m > [22mmissing token ΓåÆ 401 UNAUTHORIZED (not 403)
+ [32mΓ£ô[39m src/test/qa-contract-enforcement.test.ts[2m > [22mQA: Auth Contract ΓÇö 401 vs 403[2m > [22mvalid token, wrong role ΓåÆ 403 FORBIDDEN (not 401)
+GET /api/discovery/categories 200 1022 - 8.099 ms
+ [32mΓ£ô[39m src/test/qa-contract-enforcement.test.ts[2m > [22mQA: Auth Contract ΓÇö 401 vs 403[2m > [22mvalid token, correct role ΓåÆ not 401 or 403
+GET /api/clinical/patients 200 82 - 5.853 ms
+ [32mΓ£ô[39m src/test/qa-contract-enforcement.test.ts[2m > [22mQA: Auth Contract ΓÇö 401 vs 403[2m > [22moptionalAuth route never returns 401 without token
+GET /api/clinical/patients 200 82 - 4.728 ms
+ [32mΓ£ô[39m src/test/qa-contract-enforcement.test.ts[2m > [22mQA: Auth Contract ΓÇö 401 vs 403[2m > [22mclinical routes accessible by doctor role
+POST /api/clinical/patients 403 68 - 0.824 ms
+GET /api/does-not-exist-at-all 404 177 - 0.845 ms
+GET /api/bookings 401 100 - 0.499 ms
+ [32mΓ£ô[39m src/test/qa-contract-enforcement.test.ts[2m > [22mQA: Auth Contract ΓÇö 401 vs 403[2m > [22mclinical routes accessible by nurse role
+ [32mΓ£ô[39m src/test/qa-contract-enforcement.test.ts[2m > [22mQA: Auth Contract ΓÇö 401 vs 403[2m > [22mclinical write routes blocked for caregiver (read-only role)
+ [32mΓ£ô[39m src/test/qa-contract-enforcement.test.ts[2m > [22mQA: No HTML responses under /api/*[2m > [22munknown /api/* route returns JSON not HTML
+ [32mΓ£ô[39m src/test/qa-contract-enforcement.test.ts[2m > [22mQA: State Machine Contract[2m > [22mBooking transitions[2m > [22mpending ΓåÆ confirmed is valid
+ [32mΓ£ô[39m src/test/qa-contract-enforcement.test.ts[2m > [22mQA: State Machine Contract[2m > [22mBooking transitions[2m > [22mpending ΓåÆ completed is FORBIDDEN
+ [32mΓ£ô[39m src/test/qa-contract-enforcement.test.ts[2m > [22mQA: State Machine Contract[2m > [22mBooking transitions[2m > [22mcompleted ΓåÆ cancelled is FORBIDDEN
+ [32mΓ£ô[39m src/test/qa-contract-enforcement.test.ts[2m > [22mQA: State Machine Contract[2m > [22mBooking transitions[2m > [22mconfirmed ΓåÆ checked_in is valid
+ [32mΓ£ô[39m src/test/qa-contract-enforcement.test.ts[2m > [22mQA: State Machine Contract[2m > [22mBooking transitions[2m > [22mchecked_in ΓåÆ in_progress is valid
+ [32mΓ£ô[39m src/test/qa-contract-enforcement.test.ts[2m > [22mQA: State Machine Contract[2m > [22mEmergency transitions[2m > [22mopen ΓåÆ dispatched is valid
+ [32mΓ£ô[39m src/test/qa-contract-enforcement.test.ts[2m > [22mQA: State Machine Contract[2m > [22mEmergency transitions[2m > [22mopen ΓåÆ resolved is FORBIDDEN
+ [32mΓ£ô[39m src/test/qa-contract-enforcement.test.ts[2m > [22mQA: State Machine Contract[2m > [22mEmergency transitions[2m > [22mresolved ΓåÆ cancelled is FORBIDDEN
+ [32mΓ£ô[39m src/test/qa-contract-enforcement.test.ts[2m > [22mQA: State Machine Contract[2m > [22mEmergency transitions[2m > [22mon_scene ΓåÆ resolved is valid
+ [32mΓ£ô[39m src/test/qa-contract-enforcement.test.ts[2m > [22mQA: State Machine Contract[2m > [22mDelivery transitions[2m > [22mpending ΓåÆ assigned is valid
+ [32mΓ£ô[39m src/test/qa-contract-enforcement.test.ts[2m > [22mQA: State Machine Contract[2m > [22mDelivery transitions[2m > [22mpending ΓåÆ delivered is FORBIDDEN
+ [32mΓ£ô[39m src/test/qa-contract-enforcement.test.ts[2m > [22mQA: State Machine Contract[2m > [22mDelivery transitions[2m > [22mdelivered ΓåÆ failed is FORBIDDEN
+ [32mΓ£ô[39m src/test/qa-contract-enforcement.test.ts[2m > [22mQA: State Machine Contract[2m > [22mDelivery transitions[2m > [22min_transit ΓåÆ delivered is valid
+ [32mΓ£ô[39m src/test/qa-contract-enforcement.test.ts[2m > [22mQA: State Machine Contract[2m > [22mSubscription transitions[2m > [22mtrialing ΓåÆ active is valid
+ [32mΓ£ô[39m src/test/qa-contract-enforcement.test.ts[2m > [22mQA: State Machine Contract[2m > [22mSubscription transitions[2m > [22mcancelled ΓåÆ active is FORBIDDEN
+ [32mΓ£ô[39m src/test/qa-contract-enforcement.test.ts[2m > [22mQA: State Machine Contract[2m > [22mSubscription transitions[2m > [22mexpired ΓåÆ active is FORBIDDEN
+ [32mΓ£ô[39m src/test/qa-contract-enforcement.test.ts[2m > [22mQA: success field always present in API responses[2m > [22merror response always has success: false
+GET /api/bookings 200 1005 - 9.702 ms
+GET /api/emergency/requests 200 1089 - 4.718 ms
+GET /api/clinical/patients 200 82 - 4.389 ms
+ [32mΓ£ô[39m src/test/qa-contract-enforcement.test.ts[2m > [22mQA: success field always present in API responses[2m > [22mno response under /api/* is missing the success field
+GET /api/auth/me 401 100 - 11.063 ms
+ [32mΓ£ô[39m src/test/apiContracts.test.ts[2m > [22mKORA API Contracts[2m > [22mAuth: JWT & /me Endpoint[2m > [22mshould reject request without auth token
+GET /api/auth/me 200 142 - 5.936 ms
+ [32mΓ£ô[39m src/test/apiContracts.test.ts[2m > [22mKORA API Contracts[2m > [22mAuth: JWT & /me Endpoint[2m > [22mshould return authenticated user on /api/auth/me
+GET /api/bookings 200 82 - 8.551 ms
+GET /api/auth/me 200 142 - 1.291 ms
+ [32mΓ£ô[39m src/test/apiContracts.test.ts[2m > [22mKORA API Contracts[2m > [22mTenant Isolation: Cross-Org Access Denial[2m > [22mshould deny access to resources from different organization
+GET /api/auth/me 200 138 - 2.094 ms
+POST /api/bookings 403 68 - 2.428 ms
+ [32mΓ£ô[39m src/test/apiContracts.test.ts[2m > [22mKORA API Contracts[2m > [22mTenant Isolation: Cross-Org Access Denial[2m > [22mshould deny JWT from user of different org
+POST /api/bookings 201 28 - 2.804 ms
+ [32mΓ£ô[39m src/test/apiContracts.test.ts[2m > [22mKORA API Contracts[2m > [22mRBAC: Role-Based Access Control[2m > [22mshould deny client role from admin-only endpoint
+GET /api/auth/me 200 142 - 1.472 ms
+ [32mΓ£ô[39m src/test/apiContracts.test.ts[2m > [22mKORA API Contracts[2m > [22mRBAC: Role-Based Access Control[2m > [22mshould allow business_admin to create booking
+GET /api/auth/me 401 100 - 0.530 ms
+GET /api/bookings 200 82 - 4.815 ms
+ [32mΓ£ô[39m src/test/apiContracts.test.ts[2m > [22mKORA API Contracts[2m > [22mAPI Response Envelope: Canonical Format[2m > [22mshould return success response with canonical envelope
+ [32mΓ£ô[39m src/test/apiContracts.test.ts[2m > [22mKORA API Contracts[2m > [22mAPI Response Envelope: Canonical Format[2m > [22mshould return error response with canonical envelope
+GET /api/nonexistent-module/endpoint 404 183 - 3.582 ms
+ [32mΓ£ô[39m src/test/apiContracts.test.ts[2m > [22mKORA API Contracts[2m > [22mAPI Response Envelope: Canonical Format[2m > [22mshould return list response with pagination metadata
+GET /api/bookings/nonexistent-id 404 179 - 3.549 ms
+GET /api/auth/me 401 83 - 1.656 ms
+ [32mΓ£ô[39m src/test/apiContracts.test.ts[2m > [22mKORA API Contracts[2m > [22m404 Handling: JSON for API Routes[2m > [22mshould return JSON 404 for unknown /api/* route
+ [32mΓ£ô[39m src/test/apiContracts.test.ts[2m > [22mKORA API Contracts[2m > [22m404 Handling: JSON for API Routes[2m > [22mshould return 404 for resource not found
+ [32mΓ£ô[39m src/test/apiContracts.test.ts[2m > [22mKORA API Contracts[2m > [22mCanonical JWT Payload[2m > [22mshould decode JWT with canonical payload structure
+ [32mΓ£ô[39m src/test/apiContracts.test.ts[2m > [22mKORA API Contracts[2m > [22mCanonical JWT Payload[2m > [22mshould reject JWT without organizationId
+ [32mΓ£ô[39m src/test/apiContracts.test.ts[2m > [22mKORA API Contracts[2m > [22mres.locals.auth Canonical Shape[2m > [22mshould document expected res.locals.auth shape
+POST /api/reporting/definitions 201 211 - 7.421 ms
+ [32mΓ£ô[39m src/test/phase2-reporting-integration.test.ts[2m > [22mPhase 2 ΓÇö Reporting Module[2m > [22mPOST /api/reporting/definitions[2m > [22mshould create revenue report definition
+POST /api/reporting/definitions 201 219 - 1.758 ms
+POST /api/reporting/definitions 422 83 - 1.093 ms
+ [32mΓ£ô[39m src/test/phase2-reporting-integration.test.ts[2m > [22mPhase 2 ΓÇö Reporting Module[2m > [22mPOST /api/reporting/definitions[2m > [22mshould create booking report definition
+GET /api/reporting/definitions 200 439 - 1.139 ms
+ [32mΓ£ô[39m src/test/phase2-reporting-integration.test.ts[2m > [22mPhase 2 ΓÇö Reporting Module[2m > [22mPOST /api/reporting/definitions[2m > [22mshould return 422 with invalid cron schedule
+GET /api/reporting/definitions?type=revenue 200 255 - 0.899 ms
+ [32mΓ£ô[39m src/test/phase2-reporting-integration.test.ts[2m > [22mPhase 2 ΓÇö Reporting Module[2m > [22mGET /api/reporting/definitions[2m > [22mshould list report definitions
+POST /api/reporting/execute 202 183 - 1.811 ms
+ [32mΓ£ô[39m src/test/phase2-reporting-integration.test.ts[2m > [22mPhase 2 ΓÇö Reporting Module[2m > [22mGET /api/reporting/definitions[2m > [22mshould filter by report type
+POST /api/reporting/execute 202 183 - 0.717 ms
+ [32mΓ£ô[39m src/test/phase2-reporting-integration.test.ts[2m > [22mPhase 2 ΓÇö Reporting Module[2m > [22mPOST /api/reporting/execute[2m > [22mshould execute report immediately
+GET /api/reporting/executions/exec-1774486483316 200 183 - 1.102 ms
+GET /api/reporting/executions/exec-999 404 88 - 1.117 ms
+GET /api/reporting/stats/report-001 200 126 - 1.495 ms
+ [32mΓ£ô[39m src/test/phase2-reporting-integration.test.ts[2m > [22mPhase 2 ΓÇö Reporting Module[2m > [22mGET /api/reporting/executions/:reportId[2m > [22mshould get report execution status
+ [32mΓ£ô[39m src/test/phase2-reporting-integration.test.ts[2m > [22mPhase 2 ΓÇö Reporting Module[2m > [22mGET /api/reporting/executions/:reportId[2m > [22mshould return 404 for non-existent execution
+POST /api/reporting/definitions 201 210 - 0.684 ms
+POST /api/reporting/definitions 201 210 - 1.339 ms
+POST /api/reporting/definitions 422 83 - 0.937 ms
+POST /api/reporting/definitions 201 212 - 1.128 ms
+ [32mΓ£ô[39m src/test/phase2-reporting-integration.test.ts[2m > [22mPhase 2 ΓÇö Reporting Module[2m > [22mGET /api/reporting/stats/:reportId[2m > [22mshould get execution statistics
+ [32mΓ£ô[39m src/test/phase2-reporting-integration.test.ts[2m > [22mPhase 2 ΓÇö Reporting Module[2m > [22mRBAC: Admin-only operations[2m > [22mstaff role cannot create report definitions
+ [32mΓ£ô[39m src/test/phase2-reporting-integration.test.ts[2m > [22mPhase 2 ΓÇö Reporting Module[2m > [22mRBAC: Admin-only operations[2m > [22munauthenticated request returns 401
+ [32mΓ£ô[39m src/test/phase2-reporting-integration.test.ts[2m > [22mPhase 2 ΓÇö Reporting Module[2m > [22mReport Scheduling[2m > [22mshould validate cron expression format
+ [32mΓ£ô[39m src/test/phase2-reporting-integration.test.ts[2m > [22mPhase 2 ΓÇö Reporting Module[2m > [22mReport Scheduling[2m > [22mshould accept valid cron expressions
+GET /api/emergency/requests 200 232 - 10.058 ms
+GET /api/emergency/requests?status=open 200 110 - 1.515 ms
+ [32mΓ£ô[39m src/test/emergency.test.ts[2m > [22mGET /api/emergency/requests[2m > [22mreturns emergency requests list ordered by severity
+ [32mΓ£ô[39m src/test/emergency.test.ts[2m > [22mGET /api/emergency/requests[2m > [22mfilters by status query param
+POST /api/emergency/requests 201 217 - 1.907 ms
+ [32mΓ£ô[39m src/test/emergency.test.ts[2m > [22mPOST /api/emergency/requests[2m > [22mcreates emergency request and returns 201
+POST /api/emergency/requests 400 94 - 1.669 ms
+ [32mΓ£ô[39m src/test/emergency.test.ts[2m > [22mPOST /api/emergency/requests[2m > [22mreturns 400 when request_type is missing
+POST /api/emergency/requests 400 82 - 1.535 ms
+ [32mΓ£ô[39m src/test/emergency.test.ts[2m > [22mPOST /api/emergency/requests[2m > [22mreturns 400 for invalid severity
+PATCH /api/emergency/requests/er1/status 200 89 - 2.208 ms
+PATCH /api/emergency/requests/er1/status 400 165 - 1.344 ms
+ [32mΓ£ô[39m src/test/emergency.test.ts[2m > [22mPATCH /api/emergency/requests/:id/status[2m > [22mupdates request status
+PATCH /api/emergency/requests/missing/status 404 84 - 1.546 ms
+ [32mΓ£ô[39m src/test/emergency.test.ts[2m > [22mPATCH /api/emergency/requests/:id/status[2m > [22mreturns 400 for invalid status
+PATCH /api/emergency/requests/er1/status 422 156 - 1.244 ms
+ [32mΓ£ô[39m src/test/emergency.test.ts[2m > [22mPATCH /api/emergency/requests/:id/status[2m > [22mreturns 404 when request not found
+ [32mΓ£ô[39m src/test/emergency.test.ts[2m > [22mPATCH /api/emergency/requests/:id/status[2m > [22mreturns 422 for invalid state transition
+POST /api/emergency/requests/er1/assign 200 98 - 5.688 ms
+POST /api/emergency/requests/er1/assign 400 84 - 1.259 ms
+ [32mΓ£ô[39m src/test/emergency.test.ts[2m > [22mPOST /api/emergency/requests/:id/assign[2m > [22massigns dispatch unit and returns dispatched status
+POST /api/emergency/requests/er1/assign 404 96 - 1.327 ms
+ [32mΓ£ô[39m src/test/emergency.test.ts[2m > [22mPOST /api/emergency/requests/:id/assign[2m > [22mreturns 400 when unit_id is missing
+GET /api/emergency/units 200 160 - 1.061 ms
+ [32mΓ£ô[39m src/test/emergency.test.ts[2m > [22mPOST /api/emergency/requests/:id/assign[2m > [22mreturns 404 when dispatch unit not found
+POST /api/emergency/units 201 115 - 1.508 ms
+ [32mΓ£ô[39m src/test/emergency.test.ts[2m > [22mGET /api/emergency/units[2m > [22mreturns dispatch units list
+POST /api/emergency/units 400 88 - 0.961 ms
+GET /api/emergency/incidents/active 200 156 - 1.540 ms
+ [32mΓ£ô[39m src/test/emergency.test.ts[2m > [22mPOST /api/emergency/units[2m > [22mcreates dispatch unit and returns 201
+ [32mΓ£ô[39m src/test/emergency.test.ts[2m > [22mPOST /api/emergency/units[2m > [22mreturns 400 when unit_name is missing
+ [32mΓ£ô[39m src/test/emergency.test.ts[2m > [22mGET /api/emergency/incidents/active[2m > [22mreturns active incident summary counts
+POST /api/payments/intent 201 180 - 11.974 ms
+POST /api/notifications/dispatch 202 139 - 3.607 ms
+POST /api/notifications/dispatch 202 139 - 1.382 ms
+ [32mΓ£ô[39m src/test/phase2-cross-module-integration.test.ts[2m > [22mPhase 2 ΓÇö Cross-Module Integration[2m > [22mPayment ΓåÆ Notification Flow[2m > [22mshould send receipt email after payment confirmation
+POST /api/payments/confirm 200 185 - 1.064 ms
+ [32mΓ£ô[39m src/test/phase2-cross-module-integration.test.ts[2m > [22mPhase 2 ΓÇö Cross-Module Integration[2m > [22mPayment ΓåÆ Notification Flow[2m > [22mshould send SMS confirmation for SMS-subscribed customers
+POST /api/reporting/execute 202 191 - 2.301 ms
+ [32mΓ£ô[39m src/test/phase2-cross-module-integration.test.ts[2m > [22mPhase 2 ΓÇö Cross-Module Integration[2m > [22mPayment ΓåÆ Notification Flow[2m > [22mshould handle notification failure without blocking payment
+POST /api/reporting/execute 202 193 - 1.133 ms
+ [32mΓ£ô[39m src/test/phase2-cross-module-integration.test.ts[2m > [22mPhase 2 ΓÇö Cross-Module Integration[2m > [22mPayment ΓåÆ Reporting Flow[2m > [22mshould track payment in revenue report
+POST /api/notifications/dispatch 202 139 - 1.313 ms
+ [32mΓ£ô[39m src/test/phase2-cross-module-integration.test.ts[2m > [22mPhase 2 ΓÇö Cross-Module Integration[2m > [22mPayment ΓåÆ Reporting Flow[2m > [22mshould include payment refund in cost analysis report
+POST /api/reporting/execute 202 193 - 0.960 ms
+POST /api/payments/intent 201 185 - 1.864 ms
+ [32mΓ£ô[39m src/test/phase2-cross-module-integration.test.ts[2m > [22mPhase 2 ΓÇö Cross-Module Integration[2m > [22mNotification ΓåÆ Reporting Flow[2m > [22mshould track notification delivery in report
+POST /api/payments/confirm 200 190 - 1.262 ms
+POST /api/notifications/dispatch 202 147 - 0.785 ms
+POST /api/reporting/execute 202 193 - 1.559 ms
+ [32mΓ£ô[39m src/test/phase2-cross-module-integration.test.ts[2m > [22mPhase 2 ΓÇö Cross-Module Integration[2m > [22mComplex Cross-Module Scenario: Full Booking Flow[2m > [22mshould complete booking ΓåÆ payment ΓåÆ notification ΓåÆ reporting chain
+GET /api/payments/transactions 200 315 - 12.749 ms
+POST /api/payments/confirm 200 184 - 0.757 ms
+ [32mΓ£ô[39m src/test/phase2-cross-module-integration.test.ts[2m > [22mPhase 2 ΓÇö Cross-Module Integration[2m > [22mTransaction Consistency[2m > [22mshould maintain transaction count across all modules
+ [32mΓ£ô[39m src/test/phase2-cross-module-integration.test.ts[2m > [22mPhase 2 ΓÇö Cross-Module Integration[2m > [22mError Handling in Cross-Module Flows[2m > [22mshould not lose payment if notification fails
+POST /api/notifications/dispatch 202 145 - 1.293 ms
+ [32mΓ£ô[39m src/test/phase2-cross-module-integration.test.ts[2m > [22mPhase 2 ΓÇö Cross-Module Integration[2m > [22mError Handling in Cross-Module Flows[2m > [22mshould queue notification even if report generation fails
+POST /api/notifications/dispatch 202 148 - 0.798 ms
+POST /api/notifications/dispatch 202 148 - 0.551 ms
+POST /api/notifications/dispatch 202 148 - 0.744 ms
+POST /api/notifications/dispatch 202 148 - 0.616 ms
+POST /api/notifications/dispatch 202 148 - 0.681 ms
+ [32mΓ£ô[39m src/test/phase2-cross-module-integration.test.ts[2m > [22mPhase 2 ΓÇö Cross-Module Integration[2m > [22mConcurrency: Parallel Module Operations[2m > [22mshould handle concurrent payments and notifications
+GET /api/bookings 500 125 - 16.590 ms
+[90mstdout[2m | src/test/phase1b-rbac-hardening.test.ts[2m > [22m[2mAuth & RBAC Hardening - Authorization Matrix[2m > [22m[2mAuthentication - 401 Unauthorized[2m > [22m[2mGET /api/bookings without token returns 401
+[22m[39m[ERROR] 2026-03-26T00:54:56.154Z Server error {"timestamp":"2026-03-26T00:54:56.153Z","statusCode":500,"code":"INTERNAL_SERVER_ERROR","message":"Cannot read properties of undefined (reading 'length')","path":"/api/bookings","method":"GET","ip":"::ffff:127.0.0.1","userId":"test-user","organizationId":"org-1"}
+
+POST /api/services 400 108 - 2.093 ms
+ [31m├ù[39m src/test/phase1b-rbac-hardening.test.ts[2m > [22mAuth & RBAC Hardening - Authorization Matrix[2m > [22mAuthentication - 401 Unauthorized[2m > [22mGET /api/bookings without token returns 401
+[31m   ΓåÆ expected [ 200, 401, 400 ] to include 500[39m
+DELETE /api/services/svc-001 404 84 - 1.871 ms
+PATCH /api/services/svc-001 404 84 - 1.630 ms
+ [32mΓ£ô[39m src/test/phase1b-rbac-hardening.test.ts[2m > [22mAuth & RBAC Hardening - Authorization Matrix[2m > [22mAuthentication - 401 Unauthorized[2m > [22mPOST /api/services without token returns 401
+ [32mΓ£ô[39m src/test/phase1b-rbac-hardening.test.ts[2m > [22mAuth & RBAC Hardening - Authorization Matrix[2m > [22mRole-Based Access Control Matrix[2m > [22mclient role cannot DELETE /api/services/:id (403)
+PATCH /api/services/svc-001 500 120 - 2.128 ms
+ [32mΓ£ô[39m src/test/phase1b-rbac-hardening.test.ts[2m > [22mAuth & RBAC Hardening - Authorization Matrix[2m > [22mRole-Based Access Control Matrix[2m > [22mbusiness_admin role CAN modify services (200/201)
+[90mstdout[2m | src/test/phase1b-rbac-hardening.test.ts[2m > [22m[2mAuth & RBAC Hardening - Authorization Matrix[2m > [22m[2mRole-Based Access Control Matrix[2m > [22m[2mstaff role CANNOT modify services (403)
+[22m[39m[ERROR] 2026-03-26T00:54:56.257Z Server error {"timestamp":"2026-03-26T00:54:56.257Z","statusCode":500,"code":"INTERNAL_SERVER_ERROR","message":"Cannot read properties of undefined (reading '0')","path":"/api/services/svc-001","method":"PATCH","ip":"::ffff:127.0.0.1","userId":"test-user","organizationId":"org-1"}
+
+GET /api/bookings 200 82 - 4.087 ms
+ [32mΓ£ô[39m src/test/phase1b-rbac-hardening.test.ts[2m > [22mAuth & RBAC Hardening - Authorization Matrix[2m > [22mRole-Based Access Control Matrix[2m > [22mstaff role CANNOT modify services (403)
+GET /api/bookings 200 82 - 2.902 ms
+ [32mΓ£ô[39m src/test/phase1b-rbac-hardening.test.ts[2m > [22mAuth & RBAC Hardening - Authorization Matrix[2m > [22mRole-Based Access Control Matrix[2m > [22moperations role can LIST bookings and services
+ [32mΓ£ô[39m src/test/phase1b-rbac-hardening.test.ts[2m > [22mAuth & RBAC Hardening - Authorization Matrix[2m > [22mRole-Based Access Control Matrix[2m > [22mplatform_admin role can access all without business restriction
+GET /api/bookings/bk-001 404 171 - 3.247 ms
+GET /api/bookings/bk-001 404 171 - 2.441 ms
+ [32mΓ£ô[39m src/test/phase1b-rbac-hardening.test.ts[2m > [22mAuth & RBAC Hardening - Authorization Matrix[2m > [22mOwnership Verification[2m > [22mclient can only view own bookings
+PATCH /api/users/user-001 404 172 - 0.629 ms
+ [32mΓ£ô[39m src/test/phase1b-rbac-hardening.test.ts[2m > [22mAuth & RBAC Hardening - Authorization Matrix[2m > [22mOwnership Verification[2m > [22mclient CANNOT view other user's booking (403)
+PATCH /api/users/user-002 404 172 - 0.884 ms
+PATCH /api/services/svc-001 404 84 - 1.431 ms
+ [32mΓ£ô[39m src/test/phase1b-rbac-hardening.test.ts[2m > [22mAuth & RBAC Hardening - Authorization Matrix[2m > [22mOwnership Verification[2m > [22muser can only update own profile
+ [32mΓ£ô[39m src/test/phase1b-rbac-hardening.test.ts[2m > [22mAuth & RBAC Hardening - Authorization Matrix[2m > [22mOwnership Verification[2m > [22muser CANNOT update another user's profile (403)
+GET /api/services/business/org-001 404 181 - 2.261 ms
+ [32mΓ£ô[39m src/test/phase1b-rbac-hardening.test.ts[2m > [22mAuth & RBAC Hardening - Authorization Matrix[2m > [22mBusiness Boundary Enforcement[2m > [22muser from org-001 CANNOT access org-002 services (403)
+GET /api/bookings/business/org-001 404 181 - 2.883 ms
+ [32mΓ£ô[39m src/test/phase1b-rbac-hardening.test.ts[2m > [22mAuth & RBAC Hardening - Authorization Matrix[2m > [22mBusiness Boundary Enforcement[2m > [22mbusiness_admin can only list services for their business
+GET /api/services 500 97 - 3.421 ms
+ [32mΓ£ô[39m src/test/phase1b-rbac-hardening.test.ts[2m > [22mAuth & RBAC Hardening - Authorization Matrix[2m > [22mBusiness Boundary Enforcement[2m > [22mstaff can only view bookings for their organization
+[90mstdout[2m | src/test/phase1b-rbac-hardening.test.ts[2m > [22m[2mAuth & RBAC Hardening - Authorization Matrix[2m > [22m[2mPublic vs Protected Endpoints[2m > [22m[2mGET /api/services is public (200)
+[22m[39m[ERROR] 2026-03-26T00:54:56.398Z Server error {"timestamp":"2026-03-26T00:54:56.398Z","statusCode":500,"code":"INTERNAL_SERVER_ERROR","message":"rows.map is not a function","path":"/api/services","method":"GET","ip":"::ffff:127.0.0.1","userId":"test-user","organizationId":"org-1"}
+
+POST /api/services 400 108 - 1.220 ms
+ [32mΓ£ô[39m src/test/phase1b-rbac-hardening.test.ts[2m > [22mAuth & RBAC Hardening - Authorization Matrix[2m > [22mPublic vs Protected Endpoints[2m > [22mGET /api/services is public (200)
+DELETE /api/services/svc-001 404 84 - 1.581 ms
+DELETE /api/services/svc-001 200 67 - 1.131 ms
+GET /api/bookings 200 121 - 3.639 ms
+ [32mΓ£ô[39m src/test/phase1b-rbac-hardening.test.ts[2m > [22mAuth & RBAC Hardening - Authorization Matrix[2m > [22mPublic vs Protected Endpoints[2m > [22mPOST /api/services requires authentication (without token fails)
+ [32mΓ£ô[39m src/test/phase1b-rbac-hardening.test.ts[2m > [22mAuth & RBAC Hardening - Authorization Matrix[2m > [22mPublic vs Protected Endpoints[2m > [22mDELETE /api/services/:id requires authentication
+ [32mΓ£ô[39m src/test/phase1b-rbac-hardening.test.ts[2m > [22mAuth & RBAC Hardening - Authorization Matrix[2m > [22mError Response Consistency[2m > [22m403 Forbidden includes clear message
+ [32mΓ£ô[39m src/test/phase1b-rbac-hardening.test.ts[2m > [22mAuth & RBAC Hardening - Authorization Matrix[2m > [22mError Response Consistency[2m > [22m401 Unauthorized includes clear message
+GET /api/analytics/business-summary 200 986 - 8.234 ms
+GET /api/analytics/business-summary 200 689 - 1.262 ms
+ [32mΓ£ô[39m src/test/analytics.test.ts[2m > [22mGET /api/analytics/business-summary[2m > [22mreturns full business summary with numeric fields
+ [32mΓ£ô[39m src/test/analytics.test.ts[2m > [22mGET /api/analytics/business-summary[2m > [22mreturns empty ai_alerts array when no candidates
+GET /api/analytics/business-summary 200 697 - 0.864 ms
+GET /api/analytics/staff-performance/s1 200 320 - 2.069 ms
+ [32mΓ£ô[39m src/test/analytics.test.ts[2m > [22mGET /api/analytics/business-summary[2m > [22mcalculates vs_last_month_pct as 100 when last_month is 0
+GET /api/analytics/staff-performance/nonexistent 404 80 - 1.967 ms
+ [32mΓ£ô[39m src/test/analytics.test.ts[2m > [22mGET /api/analytics/staff-performance/:id[2m > [22mreturns staff performance metrics
+ [32mΓ£ô[39m src/test/analytics.test.ts[2m > [22mGET /api/analytics/staff-performance/:id[2m > [22mreturns 404 when staff not found
+POST /api/analytics/churn-prediction 200 263 - 2.175 ms
+POST /api/analytics/churn-prediction 500 122 - 5.967 ms
+ [32mΓ£ô[39m src/test/analytics.test.ts[2m > [22mPOST /api/analytics/churn-prediction[2m > [22mreturns at_risk_clients array using heuristic fallback
+[90mstdout[2m | src/test/analytics.test.ts[2m > [22m[2mPOST /api/analytics/churn-prediction[2m > [22m[2mreturns cached result on second call
+[22m[39m[ERROR] 2026-03-26T00:54:59.830Z Server error {"timestamp":"2026-03-26T00:54:59.830Z","statusCode":500,"code":"INTERNAL_SERVER_ERROR","message":"Cannot read properties of undefined (reading 'map')","path":"/api/analytics/churn-prediction","method":"POST","ip":"::ffff:127.0.0.1","userId":"test-user","organizationId":"org-1"}
+
+ [31m├ù[39m src/test/analytics.test.ts[2m > [22mPOST /api/analytics/churn-prediction[2m > [22mreturns cached result on second call
+[31m   ΓåÆ expected 500 to be 200 // Object.is equality[39m
+GET /api/finance/kpis 200 248 - 14.526 ms
+ [32mΓ£ô[39m src/test/finance.test.ts[2m > [22mGET /api/finance/kpis[2m > [22mreturns finance KPIs with numeric fields
+GET /api/finance/kpis 200 230 - 2.728 ms
+GET /api/finance/invoices 200 183 - 3.742 ms
+ [32mΓ£ô[39m src/test/finance.test.ts[2m > [22mGET /api/finance/kpis[2m > [22mreturns collection_rate_pct of 0 when no revenue or pending
+GET /api/finance/invoices?status=overdue 200 81 - 0.835 ms
+ [32mΓ£ô[39m src/test/finance.test.ts[2m > [22mGET /api/finance/invoices[2m > [22mreturns invoices list
+ [32mΓ£ô[39m src/test/finance.test.ts[2m > [22mGET /api/finance/invoices[2m > [22mfilters by status query param
+POST /api/finance/invoices 201 178 - 2.172 ms
+POST /api/finance/invoices 400 114 - 2.428 ms
+ [32mΓ£ô[39m src/test/finance.test.ts[2m > [22mPOST /api/finance/invoices[2m > [22mcreates invoice and returns 201
+POST /api/finance/invoices 400 90 - 1.082 ms
+ [32mΓ£ô[39m src/test/finance.test.ts[2m > [22mPOST /api/finance/invoices[2m > [22mreturns 400 when amount_cents is missing
+POST /api/finance/invoices 400 82 - 1.213 ms
+ [32mΓ£ô[39m src/test/finance.test.ts[2m > [22mPOST /api/finance/invoices[2m > [22mreturns 400 for invalid amount_cents
+ [32mΓ£ô[39m src/test/finance.test.ts[2m > [22mPOST /api/finance/invoices[2m > [22mreturns 400 for invalid due_date
+PATCH /api/finance/invoices/inv-1/status 200 90 - 1.563 ms
+PATCH /api/finance/invoices/inv-1/status 400 139 - 1.446 ms
+ [32mΓ£ô[39m src/test/finance.test.ts[2m > [22mPATCH /api/finance/invoices/:id/status[2m > [22mupdates invoice status and returns updated record
+PATCH /api/finance/invoices/missing/status 404 84 - 1.298 ms
+GET /api/finance/payouts 200 160 - 1.236 ms
+GET /api/finance/tax 200 148 - 1.078 ms
+ [32mΓ£ô[39m src/test/finance.test.ts[2m > [22mPATCH /api/finance/invoices/:id/status[2m > [22mreturns 400 for invalid status
+ [32mΓ£ô[39m src/test/finance.test.ts[2m > [22mPATCH /api/finance/invoices/:id/status[2m > [22mreturns 404 when invoice not found
+ [32mΓ£ô[39m src/test/finance.test.ts[2m > [22mGET /api/finance/payouts[2m > [22mreturns payouts list
+ [32mΓ£ô[39m src/test/finance.test.ts[2m > [22mGET /api/finance/tax[2m > [22mreturns tax records list
+GET /api/clinical/patients 200 197 - 12.508 ms
+ [32mΓ£ô[39m src/test/clinical.test.ts[2m > [22mGET /api/clinical/patients[2m > [22mreturns patients list
+GET /api/clinical/patients 200 82 - 2.116 ms
+ [32mΓ£ô[39m src/test/clinical.test.ts[2m > [22mGET /api/clinical/patients[2m > [22mreturns empty list when no patients
+POST /api/clinical/patients 201 288 - 1.563 ms
+PATCH /api/clinical/patients/p1 200 62 - 1.811 ms
+ [32mΓ£ô[39m src/test/clinical.test.ts[2m > [22mPOST /api/clinical/patients[2m > [22mcreates a patient and returns 201
+ [32mΓ£ô[39m src/test/clinical.test.ts[2m > [22mPATCH /api/clinical/patients/:id[2m > [22mupdates patient fields and returns updated id
+PATCH /api/clinical/patients/p1 400 88 - 1.877 ms
+PATCH /api/clinical/patients/missing 404 84 - 1.032 ms
+ [32mΓ£ô[39m src/test/clinical.test.ts[2m > [22mPATCH /api/clinical/patients/:id[2m > [22mreturns 400 when no fields provided
+ [32mΓ£ô[39m src/test/clinical.test.ts[2m > [22mPATCH /api/clinical/patients/:id[2m > [22mreturns 404 when patient not found
+GET /api/clinical/appointments 200 174 - 1.398 ms
+POST /api/clinical/appointments 201 210 - 1.540 ms
+ [32mΓ£ô[39m src/test/clinical.test.ts[2m > [22mGET /api/clinical/appointments[2m > [22mreturns appointments list
+POST /api/clinical/appointments 400 90 - 0.870 ms
+ [32mΓ£ô[39m src/test/clinical.test.ts[2m > [22mPOST /api/clinical/appointments[2m > [22mcreates appointment and returns 201
+PATCH /api/clinical/appointments/a1/status 200 68 - 1.048 ms
+ [32mΓ£ô[39m src/test/clinical.test.ts[2m > [22mPOST /api/clinical/appointments[2m > [22mreturns 400 when patient_id is missing
+PATCH /api/clinical/appointments/a1/status 400 78 - 0.664 ms
+GET /api/clinical/compliance 200 141 - 1.093 ms
+ [32mΓ£ô[39m src/test/clinical.test.ts[2m > [22mPATCH /api/clinical/appointments/:id/status[2m > [22mupdates appointment status
+ [32mΓ£ô[39m src/test/clinical.test.ts[2m > [22mPATCH /api/clinical/appointments/:id/status[2m > [22mreturns 400 for invalid status
+ [32mΓ£ô[39m src/test/clinical.test.ts[2m > [22mGET /api/clinical/compliance[2m > [22mreturns compliance counts
+GET /api/payments/config 200 150 - 10.434 ms
+POST /api/payments/intent 201 187 - 1.523 ms
+ [32mΓ£ô[39m src/test/payments.test.ts[2m > [22mGET /api/payments/config[2m > [22mreturns payment config with stripe summary
+POST /api/payments/intent 400 114 - 1.775 ms
+ [32mΓ£ô[39m src/test/payments.test.ts[2m > [22mPOST /api/payments/intent[2m > [22mcreates payment intent and returns 201 with client_secret
+POST /api/payments/confirm 200 187 - 1.766 ms
+ [32mΓ£ô[39m src/test/payments.test.ts[2m > [22mPOST /api/payments/intent[2m > [22mreturns 400 for invalid amount_cents
+GET /api/payments/transactions 200 315 - 2.969 ms
+ [32mΓ£ô[39m src/test/payments.test.ts[2m > [22mPOST /api/payments/confirm[2m > [22mreturns confirmed: true (flow symmetry endpoint)
+GET /api/payments/methods/c1 200 218 - 2.554 ms
+ [32mΓ£ô[39m src/test/payments.test.ts[2m > [22mGET /api/payments/transactions[2m > [22mreturns transactions list
+GET /api/payments/txn-1 200 152 - 2.990 ms
+ [32mΓ£ô[39m src/test/payments.test.ts[2m > [22mGET /api/payments/methods/:clientId[2m > [22mreturns payment methods for client
+GET /api/payments/missing 404 84 - 2.789 ms
+ [32mΓ£ô[39m src/test/payments.test.ts[2m > [22mGET /api/payments/:id[2m > [22mreturns payment by id
+PATCH /api/payments/txn-1 200 142 - 1.431 ms
+ [32mΓ£ô[39m src/test/payments.test.ts[2m > [22mGET /api/payments/:id[2m > [22mreturns 404 when payment not found
+PATCH /api/payments/txn-1 400 85 - 1.270 ms
+ [32mΓ£ô[39m src/test/payments.test.ts[2m > [22mPATCH /api/payments/:id[2m > [22mupdates payment status
+ [32mΓ£ô[39m src/test/payments.test.ts[2m > [22mPATCH /api/payments/:id[2m > [22mreturns 400 when no fields provided
+GET /api/ai/status 200 143 - 7.220 ms
+POST /api/ai/rank-commands 200 176 - 1.848 ms
+ [32mΓ£ô[39m src/test/ai.test.ts[2m > [22mGET /api/ai/status[2m > [22mreturns provider availability flags
+POST /api/ai/rank-commands 400 97 - 1.652 ms
+ [32mΓ£ô[39m src/test/ai.test.ts[2m > [22mPOST /api/ai/rank-commands[2m > [22mreturns ranked commands
+POST /api/ai/orchestrate/live 200 192 - 1.501 ms
+POST /api/ai/orchestrate/feedback 202 85 - 1.243 ms
+ [32mΓ£ô[39m src/test/ai.test.ts[2m > [22mPOST /api/ai/rank-commands[2m > [22mreturns 400 when commands is not an array
+ [32mΓ£ô[39m src/test/ai.test.ts[2m > [22mPOST /api/ai/orchestrate/live[2m > [22mreturns live orchestration result
+POST /api/ai/orchestrate/feedback 400 165 - 0.867 ms
+ [32mΓ£ô[39m src/test/ai.test.ts[2m > [22mPOST /api/ai/orchestrate/feedback[2m > [22maccepts valid feedback and returns 202
+GET /api/ai/anomalies 200 122 - 1.492 ms
+ [32mΓ£ô[39m src/test/ai.test.ts[2m > [22mPOST /api/ai/orchestrate/feedback[2m > [22mreturns 400 for invalid outcome
+ [32mΓ£ô[39m src/test/ai.test.ts[2m > [22mGET /api/ai/anomalies[2m > [22mreturns anomaly events list
+GET /api/notifications/channels 200 172 - 7.396 ms
+POST /api/notifications/dispatch 202 138 - 1.430 ms
+ [32mΓ£ô[39m src/test/notifications.test.ts[2m > [22mGET /api/notifications/channels[2m > [22mreturns available channels and queue depth
+POST /api/notifications/dispatch 400 80 - 1.175 ms
+POST /api/notifications/dispatch 400 80 - 0.705 ms
+POST /api/notifications/send 202 174 - 2.243 ms
+ [32mΓ£ô[39m src/test/notifications.test.ts[2m > [22mPOST /api/notifications/dispatch[2m > [22menqueues notification and returns 202
+ [32mΓ£ô[39m src/test/notifications.test.ts[2m > [22mPOST /api/notifications/dispatch[2m > [22mreturns 400 for invalid channel
+ [32mΓ£ô[39m src/test/notifications.test.ts[2m > [22mPOST /api/notifications/dispatch[2m > [22mreturns 400 for missing payload
+GET /api/notifications/templates 200 198 - 2.559 ms
+ [32mΓ£ô[39m src/test/notifications.test.ts[2m > [22mPOST /api/notifications/send[2m > [22mlogs and enqueues notification, returns 202 with log_id
+ [32mΓ£ô[39m src/test/notifications.test.ts[2m > [22mGET /api/notifications/templates[2m > [22mreturns templates list
+PUT /api/notifications/templates/booking_cancelled 200 154 - 1.469 ms
+PUT /api/notifications/templates/booking_cancelled 400 80 - 0.981 ms
+ [32mΓ£ô[39m src/test/notifications.test.ts[2m > [22mPUT /api/notifications/templates/:event[2m > [22mupserts template and returns it
+ [32mΓ£ô[39m src/test/notifications.test.ts[2m > [22mPUT /api/notifications/templates/:event[2m > [22mreturns 400 for invalid channel
+POST /api/video/sessions 201 322 - 8.707 ms
+ [32mΓ£ô[39m src/test/video.test.ts[2m > [22mPOST /api/video/sessions[2m > [22mcreates a session and returns 201 with join_url
+GET /api/video/sessions/sess-1 200 322 - 2.492 ms
+GET /api/video/sessions/missing 404 96 - 1.353 ms
+POST /api/video/recordings 201 217 - 1.014 ms
+ [32mΓ£ô[39m src/test/video.test.ts[2m > [22mGET /api/video/sessions/:id[2m > [22mreturns session when found
+ [32mΓ£ô[39m src/test/video.test.ts[2m > [22mGET /api/video/sessions/:id[2m > [22mreturns 404 when session not found
+GET /api/video/recordings/rec-1 200 217 - 1.356 ms
+GET /api/video/recordings/missing 404 100 - 0.976 ms
+ [32mΓ£ô[39m src/test/video.test.ts[2m > [22mPOST /api/video/recordings[2m > [22mcreates a recording and returns 201
+ [32mΓ£ô[39m src/test/video.test.ts[2m > [22mGET /api/video/recordings/:id[2m > [22mreturns recording when found
+POST /api/video/recordings/rec-1/score 200 79 - 1.069 ms
+ [32mΓ£ô[39m src/test/video.test.ts[2m > [22mGET /api/video/recordings/:id[2m > [22mreturns 404 when recording not found
+GET /api/video/analytics/sess-1 200 127 - 1.430 ms
+ [32mΓ£ô[39m src/test/video.test.ts[2m > [22mPOST /api/video/recordings/:id/score[2m > [22mscores a recording and returns result
+ [32mΓ£ô[39m src/test/video.test.ts[2m > [22mGET /api/video/analytics/:sessionId[2m > [22mreturns session analytics
+GET /api/clients/c1 200 804 - 16.693 ms
+ [32mΓ£ô[39m src/test/audience-modules.test.ts[2m > [22mAudience backend module contracts[2m > [22mGET /api/clients/:id returns client profile contract
+GET /api/analytics/business-summary 200 965 - 4.972 ms
+GET /api/platform/ai-spend-summary 200 471 - 2.185 ms
+ [32mΓ£ô[39m src/test/audience-modules.test.ts[2m > [22mAudience backend module contracts[2m > [22mGET /api/analytics/business-summary returns numeric business dashboard fields
+ [32mΓ£ô[39m src/test/audience-modules.test.ts[2m > [22mAudience backend module contracts[2m > [22mGET /api/platform/ai-spend-summary returns provider keys
+GET /api/support/cases?status=open,assigned&limit=10&page=1 200 744 - 10.061 ms
+PATCH /api/support/cases/case-1/status 422 183 - 2.575 ms
+ [32mΓ£ô[39m src/test/support.test.ts[2m > [22mSupport routes[2m > [22mlists support cases with canonical pagination metadata
+POST /api/support/cases/case-1/resolution 200 413 - 1.798 ms
+ [32mΓ£ô[39m src/test/support.test.ts[2m > [22mSupport routes[2m > [22mrejects invalid support status updates
+GET /api/support/tickets?limit=20 200 404 - 0.866 ms
+GET /api/support/tickets/case-1/timeline 200 193 - 1.732 ms
+ [32mΓ£ô[39m src/test/support.test.ts[2m > [22mSupport routes[2m > [22mrecords a resolution and marks the case resolved
+ [32mΓ£ô[39m src/test/support.test.ts[2m > [22mSupport routes[2m > [22mexposes the canonical /tickets alias
+ [32mΓ£ô[39m src/test/support.test.ts[2m > [22mSupport routes[2m > [22mreturns ticket timeline from the canonical timeline endpoint
+POST /api/notifications/dispatch 202 134 - 12.153 ms
+ [32mΓ£ô[39m src/test/phase2-notifications-integration.test.ts[2m > [22mPhase 2 ΓÇö Notifications Module[2m > [22mPOST /api/notifications/dispatch[2m > [22mshould dispatch email notification
+POST /api/notifications/dispatch 202 134 - 4.373 ms
+POST /api/notifications/dispatch 202 134 - 3.368 ms
+ [32mΓ£ô[39m src/test/phase2-notifications-integration.test.ts[2m > [22mPhase 2 ΓÇö Notifications Module[2m > [22mPOST /api/notifications/dispatch[2m > [22mshould dispatch SMS notification
+POST /api/notifications/dispatch 400 80 - 1.584 ms
+ [32mΓ£ô[39m src/test/phase2-notifications-integration.test.ts[2m > [22mPhase 2 ΓÇö Notifications Module[2m > [22mPOST /api/notifications/dispatch[2m > [22mshould dispatch WhatsApp notification
+ [32mΓ£ô[39m src/test/phase2-notifications-integration.test.ts[2m > [22mPhase 2 ΓÇö Notifications Module[2m > [22mPOST /api/notifications/dispatch[2m > [22mshould return 422 without required fields
+GET /api/notifications/channels 200 172 - 6.237 ms
+GET /api/notifications/queue/status 404 182 - 3.318 ms
+ [32mΓ£ô[39m src/test/phase2-notifications-integration.test.ts[2m > [22mPhase 2 ΓÇö Notifications Module[2m > [22mGET /api/notifications/channels[2m > [22mshould list available notification channels
+POST /api/notifications/dispatch 400 80 - 0.673 ms
+ [32mΓ£ô[39m src/test/phase2-notifications-integration.test.ts[2m > [22mPhase 2 ΓÇö Notifications Module[2m > [22mGET /api/notifications/queue/status[2m > [22mshould return queue depth and status
+ [32mΓ£ô[39m src/test/phase2-notifications-integration.test.ts[2m > [22mPhase 2 ΓÇö Notifications Module[2m > [22mRBAC: Notifications require auth[2m > [22munauthenticated request returns 401
+POST /api/ai/orchestrate/live 200 661 - 8.874 ms
+ [32mΓ£ô[39m src/test/orchestration.test.ts[2m > [22mAI Orchestration API contracts[2m > [22mPOST /api/ai/orchestrate/live returns prioritized actions contract
+POST /api/ai/orchestrate/feedback 202 85 - 1.947 ms
+POST /api/ai/orchestrate/feedback 400 165 - 1.019 ms
+ [32mΓ£ô[39m src/test/orchestration.test.ts[2m > [22mAI Orchestration API contracts[2m > [22mPOST /api/ai/orchestrate/feedback accepts valid payload and rejects invalid outcome
+ [32mΓ£ô[39m src/test/orchestration.test.ts[2m > [22mSignal aggregation + scoring[2m > [22mbuildCommandCandidates produces critical candidate and scoring applies feedback adjustment
+POST /api/payments/intent 201 194 - 6.389 ms
+POST /api/payments/intent 400 114 - 2.086 ms
+ [32mΓ£ô[39m src/test/phase2-payments-integration.test.ts[2m > [22mPhase 2 ΓÇö Payments Module[2m > [22mPOST /api/payments/intent[2m > [22mshould create payment intent with valid data
+ [32mΓ£ô[39m src/test/phase2-payments-integration.test.ts[2m > [22mPhase 2 ΓÇö Payments Module[2m > [22mPOST /api/payments/intent[2m > [22mshould return 422 without required fields
+GET /api/payments/transactions?limit=10&offset=0 200 81 - 4.500 ms
+GET /api/payments/revenue/summary 404 180 - 5.577 ms
+ [32mΓ£ô[39m src/test/phase2-payments-integration.test.ts[2m > [22mPhase 2 ΓÇö Payments Module[2m > [22mGET /api/payments/transactions[2m > [22mshould list transactions with pagination
+POST /api/payments/intent 201 100 - 1.293 ms
+ [32mΓ£ô[39m src/test/phase2-payments-integration.test.ts[2m > [22mPhase 2 ΓÇö Payments Module[2m > [22mGET /api/payments/revenue/summary[2m > [22mshould return revenue summary
+ [32mΓ£ô[39m src/test/phase2-payments-integration.test.ts[2m > [22mPhase 2 ΓÇö Payments Module[2m > [22mRBAC: Non-admin cannot access payments[2m > [22mbusiness_admin role can create intent
+ [32mΓ£ô[39m src/test/phase2-payments-integration.test.ts[2m > [22mPhase 2 ΓÇö Payments Module[2m > [22mRBAC: Non-admin cannot access payments[2m > [22mstaff role cannot access payments (403)
+GET /api/tenants 200 107 - 11.445 ms
+ [32mΓ£ô[39m src/__tests__/crud-integration.test.ts[2m > [22mCRUD Integration Tests[2m > [22mTenants API[2m > [22mshould allow platform_admin to list tenants
+GET /api/tenants 200 107 - 3.047 ms
+GET /api/tenants 200 107 - 2.710 ms
+ [32mΓ£ô[39m src/__tests__/crud-integration.test.ts[2m > [22mCRUD Integration Tests[2m > [22mTenants API[2m > [22mshould deny business_admin access to tenants
+GET /api/clients 200 151 - 6.966 ms
+ [32mΓ£ô[39m src/__tests__/crud-integration.test.ts[2m > [22mCRUD Integration Tests[2m > [22mTenants API[2m > [22mshould deny unauthenticated access
+POST /api/clients 201 113 - 2.429 ms
+ [32mΓ£ô[39m src/__tests__/crud-integration.test.ts[2m > [22mCRUD Integration Tests[2m > [22mClients API[2m > [22mshould allow business_admin to list clients
+POST /api/clients 400 112 - 1.927 ms
+ [32mΓ£ô[39m src/__tests__/crud-integration.test.ts[2m > [22mCRUD Integration Tests[2m > [22mClients API[2m > [22mshould deny staff access to create clients
+GET /api/bookings 200 82 - 3.179 ms
+ [32mΓ£ô[39m src/__tests__/crud-integration.test.ts[2m > [22mCRUD Integration Tests[2m > [22mClients API[2m > [22mshould validate required fields
+POST /api/bookings 400 86 - 4.941 ms
+ [32mΓ£ô[39m src/__tests__/crud-integration.test.ts[2m > [22mCRUD Integration Tests[2m > [22mBookings API[2m > [22mshould allow staff to read bookings
+POST /api/services 201 69 - 1.802 ms
+ [32mΓ£ô[39m src/__tests__/crud-integration.test.ts[2m > [22mCRUD Integration Tests[2m > [22mBookings API[2m > [22mshould deny staff from creating bookings
+GET /api/staff 200 38 - 3.444 ms
+ [32mΓ£ô[39m src/__tests__/crud-integration.test.ts[2m > [22mCRUD Integration Tests[2m > [22mServices API[2m > [22mshould allow business_admin to create service
+ [32mΓ£ô[39m src/__tests__/crud-integration.test.ts[2m > [22mCRUD Integration Tests[2m > [22mStaff API[2m > [22mshould allow business_admin to list staff
+GET /api/subscriptions 200 82 - 2.527 ms
+GET /api/subscriptions 200 82 - 2.528 ms
+ [32mΓ£ô[39m src/__tests__/crud-integration.test.ts[2m > [22mCRUD Integration Tests[2m > [22mSubscriptions API[2m > [22mshould allow platform_admin to list subscriptions
+ [32mΓ£ô[39m src/__tests__/crud-integration.test.ts[2m > [22mCRUD Integration Tests[2m > [22mSubscriptions API[2m > [22mshould deny business_admin access
+[90mstdout[2m | src/test/embedding.test.ts[2m > [22m[2membeddingService[2m > [22m[2mgenerateEmbedding[2m > [22m[2mthrows error for empty text
+[22m[39m[ERROR] 2026-03-26T00:55:51.004Z Exhausted all retries for generating embedding {"error":"Text for embedding cannot be empty"}
+
+[90mstdout[2m | src/test/embedding.test.ts[2m > [22m[2membeddingService[2m > [22m[2mgenerateAndStoreEmbedding[2m > [22m[2mswallows errors without bubbling up
+[22m[39m[ERROR] 2026-03-26T00:55:51.020Z Error during embed generation and storage (non-blocking) {"entityType":"staff","entityId":"1","error":"Cannot read properties of undefined (reading 'length')"}
+
+ [32mΓ£ô[39m src/test/embedding.test.ts[2m > [22membeddingService[2m > [22mgenerateEmbedding[2m > [22mthrows error for empty text[33m 3022[2mms[22m[39m
+ [32mΓ£ô[39m src/test/embedding.test.ts[2m > [22membeddingService[2m > [22mgenerateEmbedding[2m > [22mreturns an embedding array array from openai
+ [32mΓ£ô[39m src/test/embedding.test.ts[2m > [22membeddingService[2m > [22mgenerateEmbedding[2m > [22mretries up to 3 times on failure before succeeding
+ [32mΓ£ô[39m src/test/embedding.test.ts[2m > [22membeddingService[2m > [22mgenerateAndStoreEmbedding[2m > [22mskips database insert if text is empty
+ [32mΓ£ô[39m src/test/embedding.test.ts[2m > [22membeddingService[2m > [22mgenerateAndStoreEmbedding[2m > [22mgenerates embedding and stores it safely without throwing on error
+ [32mΓ£ô[39m src/test/embedding.test.ts[2m > [22membeddingService[2m > [22mgenerateAndStoreEmbedding[2m > [22mskips generating if text hash matches existing record
+ [32mΓ£ô[39m src/test/embedding.test.ts[2m > [22membeddingService[2m > [22mgenerateAndStoreEmbedding[2m > [22mswallows errors without bubbling up
+ [32mΓ£ô[39m src/test/embedding.test.ts[2m > [22membeddingService[2m > [22msearchSimilar[2m > [22mqueries database with cosine distance ordering
+GET /api/reporting/summary 200 249 - 8.721 ms
+GET /api/reporting/summary 200 145 - 1.574 ms
+ [32mΓ£ô[39m src/test/reporting.test.ts[2m > [22mGET /api/reporting/summary[2m > [22mreturns reporting summary with metrics array
+ [32mΓ£ô[39m src/test/reporting.test.ts[2m > [22mGET /api/reporting/summary[2m > [22mreturns canonical summary envelope under the shared test auth context
+POST /api/reporting/generate 202 91 - 1.439 ms
+POST /api/reporting/generate 202 91 - 1.047 ms
+ [32mΓ£ô[39m src/test/reporting.test.ts[2m > [22mPOST /api/reporting/generate[2m > [22menqueues report and returns 202 with jobId
+ [32mΓ£ô[39m src/test/reporting.test.ts[2m > [22mPOST /api/reporting/generate[2m > [22mdefaults reportType to 'daily' for unknown values
+GET /api/this-route-does-not-exist 404 181 - 7.634 ms
+GET /api/nonexistent/deeply/nested 404 181 - 0.913 ms
+POST /api/unknown-module 404 171 - 0.969 ms
+ [32mΓ£ô[39m src/__tests__/shell-stabilization.test.ts[2m > [22mJSON 404 handler[2m > [22mreturns JSON for completely unknown /api/* route
+ [32mΓ£ô[39m src/__tests__/shell-stabilization.test.ts[2m > [22mJSON 404 handler[2m > [22mreturns JSON for unknown nested /api/* route
+ [32mΓ£ô[39m src/__tests__/shell-stabilization.test.ts[2m > [22mJSON 404 handler[2m > [22mreturns JSON for unknown POST /api/* route
+GET /health 200 251 - 43.202 ms
+GET /api/auth/me 401 100 - 1.604 ms
+GET /api/auth/me 401 87 - 2.001 ms
+ [32mΓ£ô[39m src/__tests__/shell-stabilization.test.ts[2m > [22mGET /health[2m > [22mreturns JSON with status field
+ [32mΓ£ô[39m src/__tests__/shell-stabilization.test.ts[2m > [22mGET /api/auth/me[2m > [22mreturns 401 JSON when no token provided
+GET /api/auth/me 401 100 - 0.483 ms
+POST /api/auth/login 422 86 - 3.466 ms
+POST /api/auth/login 422 86 - 1.540 ms
+POST /api/auth/register 422 86 - 1.234 ms
+ [32mΓ£ô[39m src/__tests__/shell-stabilization.test.ts[2m > [22mGET /api/auth/me[2m > [22mreturns 401 JSON for malformed token
+ [32mΓ£ô[39m src/__tests__/shell-stabilization.test.ts[2m > [22mGET /api/auth/me[2m > [22mresponse envelope shape is { success: false, error: { code, message } } on failure
+ [32mΓ£ô[39m src/__tests__/shell-stabilization.test.ts[2m > [22mPOST /api/auth/login[2m > [22mreturns 422 JSON for missing fields
+ [32mΓ£ô[39m src/__tests__/shell-stabilization.test.ts[2m > [22mPOST /api/auth/login[2m > [22mreturns 422 JSON for invalid email
+ [32mΓ£ô[39m src/__tests__/shell-stabilization.test.ts[2m > [22mPOST /api/auth/register[2m > [22mreturns 422 JSON for short password
+GET /api/content/public/articles?limit=10&page=1 200 707 - 9.211 ms
+GET /api/content/public/articles/article-1 200 390 - 1.811 ms
+ [32mΓ£ô[39m src/test/content.test.ts[2m > [22mContent routes[2m > [22mlists published articles publicly with canonical pagination metadata
+GET /api/content/public/articles/missing 404 94 - 1.935 ms
+ [32mΓ£ô[39m src/test/content.test.ts[2m > [22mContent routes[2m > [22mreturns a published article publicly by id
+ [32mΓ£ô[39m src/test/content.test.ts[2m > [22mContent routes[2m > [22mreturns 404 when a published article is not found
+[90mstdout[2m | src/test/billing.test.ts[2m > [22m[2mBillingService[2m > [22m[2mthrows error on mismatched organization verification
+[22m[39m[ERROR] 2026-03-26T00:56:04.099Z Paystack verification error {"error":{},"reference":"ref123"}
+
+ [32mΓ£ô[39m src/test/billing.test.ts[2m > [22mBillingService[2m > [22mrejects invalid plans
+ [32mΓ£ô[39m src/test/billing.test.ts[2m > [22mBillingService[2m > [22minitializes a valid payment session simulating Paystack success
+ [32mΓ£ô[39m src/test/billing.test.ts[2m > [22mBillingService[2m > [22mverifies a payment and calls db updates
+ [32mΓ£ô[39m src/test/billing.test.ts[2m > [22mBillingService[2m > [22mthrows error on mismatched organization verification
+GET /api/clients 200 131 - 11.609 ms
+DELETE /api/clients/1 200 61 - 2.714 ms
+ [32mΓ£ô[39m src/__tests__/crudRoutes.test.ts[2m > [22mCRUD routes RBAC + validation[2m > [22mallows business_admin to list clients
+POST /api/bookings 400 90 - 6.786 ms
+ [32mΓ£ô[39m src/__tests__/crudRoutes.test.ts[2m > [22mCRUD routes RBAC + validation[2m > [22mforbids staff from deleting client
+POST /api/services 201 77 - 2.347 ms
+ [32mΓ£ô[39m src/__tests__/crudRoutes.test.ts[2m > [22mCRUD routes RBAC + validation[2m > [22mvalidates create booking body
+ [32mΓ£ô[39m src/__tests__/crudRoutes.test.ts[2m > [22mCRUD routes RBAC + validation[2m > [22mcreates service with platform_admin
+GET /api/payments/transactions 200 170 - 4.607 ms
+GET /api/tenants 200 107 - 2.455 ms
+ [32mΓ£ô[39m src/__tests__/crudRoutes.test.ts[2m > [22mCRUD routes RBAC + validation[2m > [22mlists payments for business_admin
+POST /api/tenants 201 74 - 0.828 ms
+ [32mΓ£ô[39m src/__tests__/crudRoutes.test.ts[2m > [22mCRUD routes RBAC + validation[2m > [22mdenies tenants list for business_admin
+ [32mΓ£ô[39m src/__tests__/crudRoutes.test.ts[2m > [22mCRUD routes RBAC + validation[2m > [22mallows platform_admin to manage tenants
+POST /api/bookings/workflow/booking-1/checkin 200 77 - 12.290 ms
+ [32mΓ£ô[39m src/test/booking-workflow-routes.test.ts[2m > [22mBooking workflow routes[2m > [22mchecks a confirmed booking into checked_in instead of in_progress
+POST /api/bookings/workflow/booking-1/start 422 171 - 3.776 ms
+ [32mΓ£ô[39m src/test/booking-workflow-routes.test.ts[2m > [22mBooking workflow routes[2m > [22mforbids starting a booking before check-in
+ [32mΓ£ô[39m src/test/monetization.test.ts[2m > [22mMonetization Plan Enforcement[2m > [22mblocks access if organization is missing
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ» Failed Tests 5 ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»
+
+ FAIL  src/test/analytics.test.ts > POST /api/analytics/churn-prediction > returns cached result on second call
+AssertionError: expected 500 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 500
+
+ Γ¥» src/test/analytics.test.ts:194:24
+    192|       .send({});
+    193| 
+    194|     expect(res.status).toBe(200);
+       |                        ^
+    195|     expect(res.body.success).toBe(true);
+    196|     expect(Array.isArray(res.body.data)).toBe(true);
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[1/5]ΓÄ»
+
+ FAIL  src/test/phase1b-contract-validation.test.ts > API Contract Validation - End-to-End > Services Endpoints - Response Contracts > GET /api/services returns paginated list with metadata
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ Γ¥» src/test/phase1b-contract-validation.test.ts:405:44
+    403|       expect(res.status).toBe(200);
+    404|       expect(res.body.success).toBe(true);
+    405|       expect(Array.isArray(res.body.data)).toBe(true);
+       |                                            ^
+    406|       expect(res.body.data.length).toBe(1);
+    407|       expect(res.body.data[0].id).toBe("svc-001");
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[2/5]ΓÄ»
+
+ FAIL  src/test/phase1b-contract-validation.test.ts > API Contract Validation - End-to-End > Bookings Endpoints - Response Contracts > GET /api/bookings returns list with context-aware filtering
+AssertionError: expected { page: 1, limit: 500, total: 1, ΓÇª(1) } to match object { page: 1, limit: 20, total: 1, ΓÇª(1) }
+
+- Expected
++ Received
+
+  Object {
+-   "limit": 20,
++   "limit": 500,
+    "page": 1,
+    "total": 1,
+    "total_pages": 1,
+  }
+
+ Γ¥» src/test/phase1b-contract-validation.test.ts:477:29
+    475|       expect(res.body.data[0]).toHaveProperty("status");
+    476|       expect(res.body.data[0]).toHaveProperty("start_time");
+    477|       expect(res.body.meta).toMatchObject({
+       |                             ^
+    478|         page: 1,
+    479|         limit: 20,
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[3/5]ΓÄ»
+
+ FAIL  src/test/phase1b-contract-validation.test.ts > API Contract Validation - End-to-End > Pagination Contract > List endpoints return pagination metadata
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ Γ¥» src/test/phase1b-contract-validation.test.ts:583:44
+    581|       expect(res.status).toBe(200);
+    582|       expect(res.body.success).toBe(true);
+    583|       expect(Array.isArray(res.body.data)).toBe(true);
+       |                                            ^
+    584|       expect(res.body.meta).toMatchObject({
+    585|         page: 1,
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[4/5]ΓÄ»
+
+ FAIL  src/test/phase1b-rbac-hardening.test.ts > Auth & RBAC Hardening - Authorization Matrix > Authentication - 401 Unauthorized > GET /api/bookings without token returns 401
+AssertionError: expected [ 200, 401, 400 ] to include 500
+ Γ¥» src/test/phase1b-rbac-hardening.test.ts:54:31
+     52| 
+     53|       // testAppFactory always injects auth ΓÇö accept 200 or 401
+     54|       expect([200, 401, 400]).toContain(res.status);
+       |                               ^
+     55|     });
+     56| 
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[5/5]ΓÄ»
+
+[2m Test Files [22m [1m[31m3 failed[39m[22m[2m | [22m[1m[32m29 passed[39m[22m[90m (32)[39m
+[2m      Tests [22m [1m[31m5 failed[39m[22m[2m | [22m[1m[32m357 passed[39m[22m[90m (362)[39m
+[2m   Start at [22m 01:54:03
+[2m   Duration [22m 129.17s[2m (transform 2.50s, setup 114ms, collect 91.97s, tests 17.79s, environment 14ms, prepare 6.67s)[22m
+

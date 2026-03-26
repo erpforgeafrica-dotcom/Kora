@@ -1,0 +1,225 @@
+version: "3.9"
+
+# Production Environment
+# Usage: docker-compose -f docker-compose.prod.yml up -d
+# Note: Configure secrets in .env.prod before running
+
+services:
+  # PostgreSQL Database - Production (High Availability)
+  postgres-prod:
+    image: postgres:16-alpine
+    container_name: kora-postgres-prod
+    environment:
+      POSTGRES_DB: kora_prod
+      POSTGRES_USER: kora_prod
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_password
+      POSTGRES_INITDB_ARGS: |
+        -c max_connections=300
+        -c shared_buffers=1GB
+        -c effective_cache_size=4GB
+        -c maintenance_work_mem=512MB
+        -c checkpoint_completion_target=0.9
+        -c wal_buffers=32MB
+        -c default_statistics_target=100
+        -c random_page_cost=1.1
+        -c effective_io_concurrency=200
+        -c work_mem=10485kB
+        -c min_wal_size=16GB
+        -c max_wal_size=64GB
+        -c max_worker_processes=8
+        -c max_parallel_workers_per_gather=4
+        -c max_parallel_workers=8
+    volumes:
+      - pg_data_prod:/var/lib/postgresql/data
+      - pg_backups_prod:/backups
+      - ./scripts/init-prod.sql:/docker-entrypoint-initdb.d/01-init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U kora_prod"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+    networks:
+      - kora-prod-network
+    restart: on-failure
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "10"
+
+  # Redis - Production (High Availability)
+  redis-prod:
+    image: redis:7-alpine
+    container_name: kora-redis-prod
+    command: |
+      redis-server 
+      --appendonly yes 
+      --appendfsync everysec
+      --requirepass ${REDIS_PASSWORD}
+      --maxmemory 2gb
+      --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data_prod:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+    networks:
+      - kora-prod-network
+    restart: on-failure
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "10"
+
+  # Backend Server - Production (Multiple Instances)
+  backend-prod:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: kora-backend-prod
+    env_file:
+      - ./backend/.env.prod
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DATABASE_URL: postgresql://kora_prod:${DB_PASSWORD}@postgres-prod:5432/kora_prod
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis-prod:6379
+    depends_on:
+      postgres-prod:
+        condition: service_healthy
+      redis-prod:
+        condition: service_healthy
+    networks:
+      - kora-prod-network
+    restart: on-failure
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "10"
+    # Resource limits for container
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+        reservations:
+          cpus: '1'
+          memory: 1G
+
+  backend-prod-2:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: kora-backend-prod-2
+    env_file:
+      - ./backend/.env.prod
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DATABASE_URL: postgresql://kora_prod:${DB_PASSWORD}@postgres-prod:5432/kora_prod
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis-prod:6379
+    depends_on:
+      postgres-prod:
+        condition: service_healthy
+      redis-prod:
+        condition: service_healthy
+    networks:
+      - kora-prod-network
+    restart: on-failure
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "10"
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+        reservations:
+          cpus: '1'
+          memory: 1G
+
+  # Worker Service - Production
+  worker-prod:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: kora-worker-prod
+    command: node dist/workers.js
+    env_file:
+      - ./backend/.env.prod
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://kora_prod:${DB_PASSWORD}@postgres-prod:5432/kora_prod
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis-prod:6379
+    depends_on:
+      postgres-prod:
+        condition: service_healthy
+      redis-prod:
+        condition: service_healthy
+    networks:
+      - kora-prod-network
+    restart: on-failure
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "10"
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+        reservations:
+          cpus: '1'
+          memory: 1G
+
+  # Frontend - Production
+  frontend-prod:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        NODE_ENV: production
+    container_name: kora-frontend-prod
+    env_file:
+      - ./frontend/.env.prod
+    environment:
+      NODE_ENV: production
+    depends_on:
+      - backend-prod
+    networks:
+      - kora-prod-network
+    restart: on-failure
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "10"
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512M
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+
+volumes:
+  pg_data_prod:
+    driver: local
+  pg_backups_prod:
+    driver: local
+  redis_data_prod:
+    driver: local
+
+networks:
+  kora-prod-network:
+    driver: bridge

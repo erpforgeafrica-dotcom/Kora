@@ -1,0 +1,19 @@
+{
+  "terminal.integrated.defaultProfile.windows": "PowerShell",
+  "terminal.integrated.profiles.windows": {
+    "PowerShell": {
+      "source": "PowerShell"
+    },
+    "Command Prompt": {
+      "path": [
+        "${env:windir}\\System32\\cmd.exe"
+      ]
+    }
+  },
+  "terminal.integrated.cwd": "${workspaceFolder}",
+  "terminal.integrated.enablePersistentSessions": true,
+  "git.ignoreLimitWarning": true,
+  "python.terminal.activateEnvInCurrentTerminal": true,
+  "snyk.advanced.autoSelectOrganization": true,
+  "snyk.advanced.organization": "b9e07c16-f27c-4fb7-aefe-3d046b40127e"
+}

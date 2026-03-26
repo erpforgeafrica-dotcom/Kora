@@ -1,0 +1,23 @@
+{
+    "recommendations": [
+        "ai-code-assistant.smart-ai-code-assistant",
+        "cmcglobal.c-codex",
+        "vaultai.vaultai-code-assistant",
+        "microchip.mplab-ai-coding-assistant",
+        "autodidact613.continue613",
+        "jeeva-dev.scriptly",
+        "keploy.keployio",
+        "fittentech.fitten-code",
+        "alibaba-cloud.tongyi-lingma",
+        "blackboxapp.blackbox",
+        "aminer.codegeex",
+        "teameklavya.azure-ai-code-assistant",
+        "snyk-security.snyk-vulnerability-scanner-preview",
+        "charkoal.charkoal",
+        "wanow.antigravity-cockpit-multi-account",
+        "openai.chatgpt",
+        "blackboxapp.blackboxagent",
+        "wassimdev.wassimdev-vscode-deepseek",
+        "my-o.copilot-profile-manager"
+    ]
+}
