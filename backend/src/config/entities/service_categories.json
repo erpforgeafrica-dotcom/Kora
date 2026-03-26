@@ -1,0 +1,12 @@
+{
+  "list": {
+    "columns": ["name", "description", "slug", "is_active"],
+    "searchable": ["name", "description", "slug"],
+    "sortable": ["name", "created_at"]
+  },
+  "actions": {
+    "create": true,
+    "edit": true,
+    "delete": true
+  }
+}

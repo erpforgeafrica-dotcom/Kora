@@ -1,0 +1,12 @@
+{
+  "list": {
+    "columns": ["first_name", "last_name", "email", "phone", "membership_tier"],
+    "searchable": ["first_name", "last_name", "email", "phone"],
+    "sortable": ["first_name", "last_name", "created_at"]
+  },
+  "actions": {
+    "create": true,
+    "edit": true,
+    "delete": true
+  }
+}

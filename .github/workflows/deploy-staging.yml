@@ -1,0 +1,99 @@
+name: Deploy to Staging
+
+on:
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: 'Image tag to deploy'
+        required: true
+        default: 'latest'
+      environment:
+        description: 'Deployment environment'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+          - staging
+          - staging-qa
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    environment:
+      name: staging
+      url: https://api-staging.kora.app
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME_STAGING }}
+          aws-region: us-east-1
+
+      - name: SSH Deploy to Staging
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.STAGING_HOST }}
+          username: ubuntu
+          key: ${{ secrets.STAGING_SSH_KEY }}
+          port: 22
+          script: |
+            set -e
+            
+            echo "📦 Pulling latest code..."
+            cd ~/kora
+            git fetch origin main
+            git checkout origin/main
+            
+            echo "🔐 Logging in to registry..."
+            echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+            
+            echo "📥 Pulling images..."
+            docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/backend:${{ github.inputs.image_tag }}
+            docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/frontend:${{ github.inputs.image_tag }}
+            
+            echo "🔄 Stopping old services..."
+            docker-compose -f docker-compose.staging.yml down || true
+            
+            echo "🚀 Starting new services..."
+            docker-compose -f docker-compose.staging.yml up -d
+            
+            echo "⏳ Waiting for services to be healthy..."
+            sleep 10
+            
+            echo "🗄️ Running migrations..."
+            docker exec kora-backend-staging npm run db:migrate
+            
+            echo "✅ Deployment complete!"
+            docker-compose -f docker-compose.staging.yml ps
+
+      - name: Health check
+        run: |
+          echo "🏥 Checking backend health..."
+          for i in {1..30}; do
+            if curl -f https://api-staging.kora.app/health > /dev/null 2>&1; then
+              echo "✅ Backend is healthy!"
+              exit 0
+            fi
+            echo "⏳ Retry $i/30..."
+            sleep 2
+          done
+          echo "❌ Backend health check failed!"
+          exit 1
+
+      - name: Notify deployment
+        if: always()
+        uses: 8398a7/action-slack@v3
+        with:
+          status: ${{ job.status }}
+          text: 'Staging deployment: ${{ job.status }}'
+          webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+          fields: repo,message,commit,author,action,eventName,ref,workflow

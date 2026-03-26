@@ -1,0 +1,25 @@
+{
+  "scripts": {
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest --coverage",
+    "test:watch": "vitest --watch",
+    "cypress:open": "cypress open",
+    "cypress:run": "cypress run",
+    "cypress:run:headless": "cypress run --headless --browser chrome",
+    "validate:rbac": "node scripts/validate-rbac.js",
+    "quality:gate": "npm run lint && npm run type-check && npm run test:coverage && npm run validate:rbac"
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "^6.1.5",
+    "@testing-library/react": "^14.1.2",
+    "@testing-library/user-event": "^14.5.1",
+    "@vitest/coverage-v8": "^1.0.4",
+    "@vitest/ui": "^1.0.4",
+    "cypress": "^13.6.1",
+    "jsdom": "^23.0.1",
+    "msw": "^2.0.11",
+    "vitest": "^1.0.4",
+    "glob": "^10.3.10"
+  }
+}
