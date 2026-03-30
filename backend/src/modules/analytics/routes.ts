@@ -276,11 +276,16 @@ analyticsRoutes.post("/churn-prediction", async (req, res, next) => {
 
     const lookbackDays = Math.min(180, Math.max(30, Number(req.body?.lookback_days ?? 90)));
     const cacheKey = `churn-prediction:${organizationId}:${lookbackDays}`;
-    const cached = await getCachedJson<Array<Record<string, unknown>>>(cacheKey);
-    if (Array.isArray(cached)) {
-      return respondList(req, res, cached, {
-        count: cached.length,
-        limit: cached.length || 1,
+    const cached = await getCachedJson<Array<Record<string, unknown>> | { at_risk_clients?: Array<Record<string, unknown>> }>(cacheKey);
+    const cachedRows = Array.isArray(cached)
+      ? cached
+      : Array.isArray(cached?.at_risk_clients)
+        ? cached.at_risk_clients
+        : null;
+    if (cachedRows) {
+      return respondList(req, res, cachedRows, {
+        count: cachedRows.length,
+        limit: cachedRows.length || 1,
         page: 1,
       });
     }

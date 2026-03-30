@@ -1,4 +1,5 @@
 import { handleSubscriptionDeleted, markPaymentIntentFailed, markPaymentIntentSucceeded } from "./service.js";
+import { enqueueNotification } from "../../queues/index.js";
 
 export async function handlePaymentIntentSucceeded(
   organizationId: string,
@@ -7,13 +8,33 @@ export async function handlePaymentIntentSucceeded(
   chargeId?: string | null,
   receiptUrl?: string | null
 ) {
-  return markPaymentIntentSucceeded({
+  const result = await markPaymentIntentSucceeded({
     organizationId,
     paymentIntentId,
     paymentMethodId,
     chargeId,
     receiptUrl
   });
+
+  // Dispatch payment receipt notification
+  try {
+    await enqueueNotification({
+      organizationId,
+      channel: "email",
+      payload: {
+        event_type: "payment_receipt",
+        payment_intent_id: paymentIntentId,
+        charge_id: chargeId,
+        receipt_url: receiptUrl,
+        timestamp: new Date().toISOString()
+      }
+    });
+  } catch (error) {
+    console.error("Failed to enqueue payment receipt notification", { paymentIntentId, error });
+    // Don't throw - payment was successful, just failed to queue notification
+  }
+
+  return result;
 }
 
 export async function handlePaymentIntentFailed(

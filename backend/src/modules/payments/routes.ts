@@ -102,6 +102,9 @@ paymentsRoutes.post("/intent", authorize("business_admin", "platform_admin", "st
     if (!Number.isFinite(amountCents) || amountCents <= 0) {
       return respondError(res, "VALIDATION_ERROR", "Invalid amount_cents: must be a positive integer", 400);
     }
+    if (!/^[a-z]{3}$/i.test(currency)) {
+      return respondError(res, "VALIDATION_ERROR", "Invalid currency: must be a 3-letter code", 400);
+    }
 
     const intent = await createPaymentIntent({
       organizationId,

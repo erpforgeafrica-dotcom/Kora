@@ -294,16 +294,47 @@ async function safeSignalAggregation(): Promise<void> {
   }
 }
 
+// Session cleanup scheduler
+async function safeSessionCleanup(): Promise<void> {
+  try {
+    const result = await queryDb<{ rows_deleted: number }>(
+      `WITH deleted_sessions AS (
+        DELETE FROM login_sessions
+        WHERE expires_at < NOW()
+           OR (revoked_at IS NOT NULL AND revoked_at < NOW() - interval '30 days')
+        RETURNING id
+      )
+      SELECT COUNT(*) as rows_deleted FROM deleted_sessions`,
+      []
+    );
+
+    const deletedCount = result[0]?.rows_deleted ?? 0;
+    if (deletedCount > 0) {
+      logger.info("Session cleanup completed", {
+        sessionsDeleted: deletedCount,
+        timestamp: new Date().toISOString()
+      });
+    }
+  } catch (error) {
+    logger.error("Session cleanup failed", {
+      error: error instanceof Error ? error.message : String(error)
+    }, error instanceof Error ? error : undefined);
+  }
+}
+
 // Initial runs with proper error handling
 safeAnomalyScan();
 safeSignalAggregation();
+safeSessionCleanup();
 
 // Scheduled runs with circuit breakers
 const anomalyScanIntervalMs = Number(process.env.ANOMALY_SCAN_INTERVAL_MS ?? 60000);
 const signalAggregationIntervalMs = Number(process.env.SIGNAL_AGG_INTERVAL_MS ?? 45000);
+const sessionCleanupIntervalMs = Number(process.env.SESSION_CLEANUP_INTERVAL_MS ?? 3600000); // 1 hour default
 
 setInterval(safeAnomalyScan, anomalyScanIntervalMs);
 setInterval(safeSignalAggregation, signalAggregationIntervalMs);
+setInterval(safeSessionCleanup, sessionCleanupIntervalMs);
 
 // Graceful shutdown
 process.on('SIGTERM', async () => {

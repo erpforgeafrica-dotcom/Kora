@@ -1,4 +1,4 @@
-import { renderHook, waitFor } from '@testing-library/react';
+import { act, renderHook, waitFor } from '@testing-library/react';
 import { setupServer } from 'msw/node';
 import { http, HttpResponse } from 'msw';
 import { useAiInsight, __resetAiInsightCache } from '../hooks/useAiInsight';
@@ -130,7 +130,9 @@ describe('useAiInsight Hook', () => {
         expect(result.current.data).toEqual(mockAiPrediction);
       }, { timeout: 3000 });
 
-      vi.advanceTimersByTime(30000);
+      await act(async () => {
+        vi.advanceTimersByTime(30000);
+      });
 
       await waitFor(() => {
         expect(result.current.data).toEqual(mockAiPrediction);

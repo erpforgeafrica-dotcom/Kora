@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { Queue } from "bullmq";
 
 const redisUrl = process.env.REDIS_URL ?? "redis://localhost:6379";
@@ -45,39 +46,63 @@ export interface AnomalyDetectionJobData {
 }
 
 export async function enqueueNotification(data: NotificationJobData) {
-  return notificationsQueue.add("dispatch_notification", data, {
+  const jobId = randomUUID();
+  const job = await notificationsQueue.add("dispatch_notification", data, {
+    jobId,
     attempts: 5,
     backoff: { type: "exponential", delay: 1000 },
     removeOnComplete: 200,
     removeOnFail: 500
   });
+  if (job.id === undefined || job.id === null) {
+    Object.defineProperty(job, "id", { value: jobId, configurable: true });
+  }
+  return job;
 }
 
 export async function enqueueCampaignDispatch(data: CampaignJobData) {
-  return notificationsQueue.add("campaign_send", data, {
+  const jobId = randomUUID();
+  const job = await notificationsQueue.add("campaign_send", data, {
+    jobId,
     attempts: 3,
     backoff: { type: "exponential", delay: 2000 },
     removeOnComplete: 200,
     removeOnFail: 500
   });
+  if (job.id === undefined || job.id === null) {
+    Object.defineProperty(job, "id", { value: jobId, configurable: true });
+  }
+  return job;
 }
 
 export async function enqueueReportGeneration(data: ReportJobData) {
-  return reportingQueue.add("generate_report", data, {
+  const jobId = randomUUID();
+  const job = await reportingQueue.add("generate_report", data, {
+    jobId,
     attempts: 3,
     backoff: { type: "exponential", delay: 2000 },
     removeOnComplete: 200,
     removeOnFail: 500
   });
+  if (job.id === undefined || job.id === null) {
+    Object.defineProperty(job, "id", { value: jobId, configurable: true });
+  }
+  return job;
 }
 
 export async function enqueueAnomalyDetection(data: AnomalyDetectionJobData) {
-  return anomalyQueue.add("detect_anomaly", data, {
+  const jobId = randomUUID();
+  const job = await anomalyQueue.add("detect_anomaly", data, {
+    jobId,
     attempts: 3,
     backoff: { type: "exponential", delay: 1000 },
     removeOnComplete: 200,
     removeOnFail: 500
   });
+  if (job.id === undefined || job.id === null) {
+    Object.defineProperty(job, "id", { value: jobId, configurable: true });
+  }
+  return job;
 }
 
 export async function getQueueDepth() {

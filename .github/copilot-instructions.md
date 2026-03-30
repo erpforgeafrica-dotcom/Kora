@@ -60,7 +60,7 @@ KORA follows strict module boundaries. Each module is self-contained with:
 - Database repositories (`db/repositories/<module>Repository.ts`)
 
 **Core Modules** (8):
-- `auth` - Clerk integration, session management, RBAC
+- `auth` - JWT authentication, session management, RBAC
 - `bookings` - Appointment scheduling, booking lifecycle
 - `appointments` - Appointment management
 - `clinical` - Patient records, clinical data
@@ -83,8 +83,10 @@ KORA follows strict module boundaries. Each module is self-contained with:
 - All protected routes require `requireAuth` middleware (see `src/middleware/auth.ts`)
 - Routes specify protection at route registration: `app.use("/api/bookings", requireAuth, bookingsRoutes)`
 - Public routes use `optionalAuth` for anonymous access
-- Clerk bearer tokens validated via `CLERK_SECRET_KEY`
-- Organization ID extracted from token and accessible via `res.locals.auth.organizationId`
+- JWT bearer tokens validated via `JWT_SECRET` (must be configured in environment)
+- Token lifecycle: Generated on register/login, validated on each request, revoked on logout
+- Organization ID extracted from JWT and accessible via `res.locals.auth.organizationId`
+- Session tracking in database enables logout/revocation and audit trails
 
 **Async Processing**:
 - BullMQ + Redis for job queues
