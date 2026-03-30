@@ -4,7 +4,7 @@ import { getRequiredOrganizationId } from "../../shared/http.js";
 import { BadRequestError, NotFoundError } from "../../middleware/enhancedErrorHandler.js";
 import { requireRole } from "../../middleware/rbac.js";
 import { embeddingService } from "../../services/ai/embeddingService.js";
-import { respondSuccess } from "../../shared/response.js";
+import { respondList, respondSuccess } from "../../shared/response.js";
 
 export const servicesRoutes = Router();
 
@@ -15,13 +15,15 @@ export const servicesRoutes = Router();
  * - services.organization_id (required)
  * - services.is_active (boolean)
  *
- * Response shape is compatible with existing frontend `useCrud` parsing:
- * - list returns `{ services: [...] }`
+ * List responses follow the canonical shared response contract.
  */
 
 servicesRoutes.get("/", requireRole("business_admin", "platform_admin", "staff"), async (req, res, next) => {
   try {
     const organizationId = getRequiredOrganizationId(res);
+    const limit = Math.min(500, Math.max(1, Number(req.query.limit ?? 20) || 20));
+    const page = Math.max(1, Number(req.query.page ?? 1) || 1);
+    const offset = (page - 1) * limit;
 
     const rows = await queryDb(
       `select id::text,
@@ -39,8 +41,9 @@ servicesRoutes.get("/", requireRole("business_admin", "platform_admin", "staff")
          from services
         where organization_id = $1
         order by created_at desc
-        limit 500`,
-      [organizationId]
+        limit $2
+       offset $3`,
+      [organizationId, limit, offset]
     );
 
     // Provide `active` alias for legacy frontend columns.
@@ -49,7 +52,12 @@ servicesRoutes.get("/", requireRole("business_admin", "platform_admin", "staff")
       active: row.is_active
     }));
 
-    return respondSuccess(res, { module: "services", count: services.length, services });
+    return respondList(req, res, services, {
+      count: services.length,
+      limit,
+      page,
+      offset,
+    });
   } catch (error) {
     return next(error);
   }
@@ -229,4 +237,3 @@ servicesRoutes.delete("/:id", requireRole("business_admin", "platform_admin"), a
     return next(error);
   }
 });
-

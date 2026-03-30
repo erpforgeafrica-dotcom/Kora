@@ -5,6 +5,7 @@ import { MemoryRouter, Routes, Route } from "react-router-dom";
 import SubscriptionsListPage from "@/pages/subscriptions/ListPage";
 import SubscriptionsCreatePage from "@/pages/subscriptions/CreatePage";
 import SubscriptionsEditPage from "@/pages/subscriptions/EditPage";
+import * as platformAdmin from "@/services/platformAdmin";
 
 const subscriptionsData = [
   {
@@ -19,42 +20,84 @@ const subscriptionsData = [
   },
 ];
 
-const createMock = vi.fn();
-const updateMock = vi.fn();
-const deleteItemMock = vi.fn();
-const refetchMock = vi.fn();
-
-vi.mock("@/hooks/useCrud", () => ({
-  useCrud: () => ({
-    data: subscriptionsData,
-    loading: false,
-    error: null,
-    create: createMock,
-    update: updateMock,
-    deleteItem: deleteItemMock,
-    refetch: refetchMock,
-  }),
-}));
-
-const WithRouter = ({ children }: { children: React.ReactNode }) => (
-  <MemoryRouter initialEntries={["/app/kora-admin/subscriptions"]}>{children}</MemoryRouter>
-);
+vi.mock("@/services/platformAdmin", async () => {
+  const actual = await vi.importActual<typeof import("@/services/platformAdmin")>("@/services/platformAdmin");
+  return {
+    ...actual,
+    getSubscriptions: vi.fn(),
+    getSubscription: vi.fn(),
+    createSubscription: vi.fn(),
+    updateSubscription: vi.fn(),
+  };
+});
 
 describe("Subscriptions CRUD UI", () => {
+  beforeEach(() => {
+    vi.mocked(platformAdmin.getSubscriptions).mockResolvedValue([
+      {
+        id: "sub-1",
+        organization_id: "org-1",
+        plan: "Gold",
+        status: "active",
+        current_period_start: "2024-01-01T00:00:00.000Z",
+        current_period_end: "2024-12-31T00:00:00.000Z",
+        created_at: "2024-01-01T00:00:00.000Z",
+        provider_subscription_id: null,
+      },
+    ]);
+    vi.mocked(platformAdmin.getSubscription).mockResolvedValue({
+      id: "sub-1",
+      organization_id: "org-1",
+      plan: "Gold",
+      status: "active",
+      current_period_start: "2024-01-01T00:00:00.000Z",
+      current_period_end: "2024-12-31T00:00:00.000Z",
+      created_at: "2024-01-01T00:00:00.000Z",
+      provider_subscription_id: null,
+    });
+    vi.mocked(platformAdmin.updateSubscription).mockResolvedValue({
+      id: "sub-1",
+      organization_id: "org-1",
+      plan: "Gold",
+      status: "active",
+      current_period_start: "2024-01-01T00:00:00.000Z",
+      current_period_end: "2024-12-31T00:00:00.000Z",
+      created_at: "2024-01-01T00:00:00.000Z",
+      provider_subscription_id: null,
+    });
+  });
+
   test("renders a subscription row", async () => {
-    render(<SubscriptionsListPage />, { wrapper: WithRouter });
-    expect(screen.getByText("Gold")).toBeInTheDocument();
-    expect(screen.getByText("monthly")).toBeInTheDocument();
-    expect(screen.getByText("199")).toBeInTheDocument();
-    expect(screen.getByText("active")).toBeInTheDocument();
+    render(
+      <MemoryRouter initialEntries={["/app/kora-admin/subscriptions"]}>
+        <SubscriptionsListPage />
+      </MemoryRouter>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText("Gold")).toBeInTheDocument();
+      expect(screen.getByText("org-1")).toBeInTheDocument();
+      expect(screen.getByText("active")).toBeInTheDocument();
+    });
   });
 
   test('clicking "New Subscription" shows the create form', async () => {
-    render(<SubscriptionsListPage />, { wrapper: WithRouter });
+    render(
+      <MemoryRouter initialEntries={["/app/kora-admin/subscriptions"]}>
+        <Routes>
+          <Route path="/app/kora-admin/subscriptions" element={<SubscriptionsListPage />} />
+          <Route path="/app/kora-admin/subscriptions/create" element={<SubscriptionsCreatePage />} />
+        </Routes>
+      </MemoryRouter>
+    );
+
+    await waitFor(() => expect(screen.getByText("Gold")).toBeInTheDocument());
     fireEvent.click(screen.getByRole("button", { name: /new subscription/i }));
-    render(<SubscriptionsCreatePage />, { wrapper: WithRouter });
-    expect(screen.getByLabelText(/plan name/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/billing cycle/i)).toBeInTheDocument();
+
+    await waitFor(() => {
+      expect(screen.getByLabelText(/plan/i)).toBeInTheDocument();
+      expect(screen.getByLabelText(/status/i)).toBeInTheDocument();
+    });
   });
 
   test("edit form is pre-filled", async () => {
@@ -68,7 +111,7 @@ describe("Subscriptions CRUD UI", () => {
 
     await waitFor(() => {
       expect(screen.getByDisplayValue("Gold")).toBeInTheDocument();
-      expect(screen.getByDisplayValue("199")).toBeInTheDocument();
+      expect(screen.getByLabelText(/status/i)).toHaveValue("active");
     });
   });
 });

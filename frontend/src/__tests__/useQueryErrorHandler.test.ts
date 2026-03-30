@@ -1,5 +1,6 @@
+import { createElement, type ReactNode } from 'react';
 import { renderHook, waitFor } from '@testing-library/react';
-import { QueryClient } from '@tanstack/react-query';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useQueryErrorHandler } from '../hooks/useQueryErrorHandler';
 import { useAppStore } from '../stores/useAppStore';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
@@ -14,6 +15,8 @@ vi.mock('../contexts/KoraToastContext', () => ({
 
 describe('useQueryErrorHandler Integration', () => {
   let queryClient: QueryClient;
+  const wrapper = ({ children }: { children: ReactNode }) =>
+    createElement(QueryClientProvider, { client: queryClient }, children);
 
   beforeEach(() => {
     mockShowToast.mockClear();
@@ -27,14 +30,14 @@ describe('useQueryErrorHandler Integration', () => {
   });
 
   it('should setup global error handler on mount', () => {
-    const { result } = renderHook(() => useQueryErrorHandler());
-    
-    // Hook should be defined (setup successfully)
-    expect(result.current).toBeDefined();
+    renderHook(() => useQueryErrorHandler(), { wrapper });
+
+    expect(typeof queryClient.getDefaultOptions().queries?.retry).toBe('function');
+    expect(queryClient.getDefaultOptions().mutations?.retry).toBe(false);
   });
 
   it('should set error state on mutation error', async () => {
-    renderHook(() => useQueryErrorHandler());
+    renderHook(() => useQueryErrorHandler(), { wrapper });
 
     // Simulate a mutation error
     const errorMessage = 'Network error occurred';

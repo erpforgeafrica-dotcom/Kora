@@ -241,7 +241,12 @@ describe("API Contract Validation - End-to-End", () => {
         return [];
       }
 
-      if (normalizedQuery.includes("from services") && normalizedQuery.includes("limit 500")) {
+      if (
+        normalizedQuery.includes("from services") &&
+        normalizedQuery.includes("order by created_at desc") &&
+        normalizedQuery.includes("limit $2") &&
+        normalizedQuery.includes("offset $3")
+      ) {
         if (serviceError) {
           const err = serviceError;
           serviceError = null;
@@ -252,7 +257,10 @@ describe("API Contract Validation - End-to-End", () => {
         return response;
       }
 
-      if (normalizedQuery.includes("from services") && normalizedQuery.includes("limit 1") && normalizedQuery.includes("and id = $2")) {
+      if (
+        normalizedQuery.includes("from services") &&
+        normalizedQuery.includes("where organization_id = $1 and id = $2")
+      ) {
         if (serviceError) {
           const err = serviceError;
           serviceError = null;

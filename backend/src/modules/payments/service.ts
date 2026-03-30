@@ -19,12 +19,51 @@ export interface CreatePaymentIntentInput {
 }
 
 export async function createPaymentIntent(input: CreatePaymentIntentInput) {
+  const normalizedCurrency = input.currency.toLowerCase();
+
+  if (process.env.ENABLE_MOCK_PAYMENTS === "true") {
+    const paymentIntentId = `pi_mock_${Date.now()}`;
+    const clientSecret = `${paymentIntentId}_secret_mock`;
+
+    await queryDb(
+      `insert into transactions (
+         id, organization_id, invoice_id, booking_id, client_id, stripe_payment_intent_id,
+         stripe_customer_id, amount_cents, currency, status, payment_method, metadata
+       ) values (
+         gen_random_uuid(), $1, $2, $3, $4, $5, null, $6, $7, 'pending', 'card', $8::jsonb
+       )
+       on conflict (stripe_payment_intent_id)
+       do update set
+         invoice_id = excluded.invoice_id,
+         booking_id = excluded.booking_id,
+         client_id = excluded.client_id,
+         amount_cents = excluded.amount_cents,
+         currency = excluded.currency,
+         metadata = excluded.metadata`,
+      [
+        input.organizationId,
+        input.invoiceId ?? null,
+        input.bookingId ?? null,
+        input.clientId ?? null,
+        paymentIntentId,
+        input.amountCents,
+        normalizedCurrency,
+        JSON.stringify({ provider: "mock_stripe", client_secret_present: true })
+      ]
+    );
+
+    return {
+      clientSecret,
+      paymentIntentId,
+      provider: "mock_stripe"
+    };
+  }
+
   if (!isStripeConfigured()) {
     throw new Error("stripe_not_configured");
   }
 
   const stripe = getStripeClient();
-  const normalizedCurrency = input.currency.toLowerCase();
 
   let stripeCustomerId: string | null = null;
   if (input.clientId) {
@@ -535,6 +574,7 @@ export async function listTransactions(organizationId: string, filters: Record<s
   return queryDb(
     `select
         id,
+        organization_id::text,
         invoice_id,
         booking_id,
         client_id,

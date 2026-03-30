@@ -199,13 +199,17 @@ async function fetchCsrfToken() {
     throw new Error("Failed to obtain CSRF token");
   }
 
-  const payload = (await response.json()) as { csrfToken?: string };
-  if (!payload.csrfToken) {
+  const payload = (await response.json()) as {
+    csrfToken?: string;
+    data?: { csrfToken?: string };
+  };
+  const csrfToken = payload.data?.csrfToken ?? payload.csrfToken ?? "";
+  if (!csrfToken) {
     throw new Error("CSRF token missing from response");
   }
 
-  localStorage.setItem(CSRF_TOKEN_STORAGE_KEY, payload.csrfToken);
-  return payload.csrfToken;
+  localStorage.setItem(CSRF_TOKEN_STORAGE_KEY, csrfToken);
+  return csrfToken;
 }
 
 async function ensureCsrfToken(forceRefresh = false) {

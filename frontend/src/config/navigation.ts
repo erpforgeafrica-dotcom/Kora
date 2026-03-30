@@ -133,9 +133,9 @@ const supportSection: NavSection = {
   overviewPath: "/app/operations/support",
   description: "Support queue, escalations, and resolved ticket management.",
   children: [
-    { label: "Queue",       path: "/app/operations/support" },
+    { label: "Support Queue", path: "/app/operations/support" },
     { label: "Escalations", path: "/app/operations/support?view=escalations" },
-    { label: "Resolved",    path: "/app/operations/support?view=resolved" },
+    { label: "Resolved Tickets", path: "/app/operations/support?view=resolved" },
   ],
 };
 
@@ -153,12 +153,12 @@ const settingsSection: NavSection = {
     { label: "Security",           path: "/app/settings?section=security" },
     { label: "Billing",            path: "/app/settings?section=billing" },
     { label: "Notifications",      path: "/app/settings?section=notifications" },
-    { label: "Workflow Rules",     path: "/app/settings?section=workflow-rules" },
+    { label: "Workflow Rules",     path: "/app/settings?section=workflow-rules", hidden: true },
     { label: "Feature Flags",      path: "/app/settings?section=feature-flags" },
     { label: "AI Controls",        path: "/app/settings?section=ai-settings" },
-    { label: "Integrations",       path: "/app/settings?section=integrations" },
+    { label: "Integrations",       path: "/app/settings?section=integrations", hidden: true },
     { label: "Preferences",        path: "/app/settings?section=preferences" },
-    { label: "Audit & Governance", path: "/app/settings?section=audit-governance" },
+    { label: "Audit & Governance", path: "/app/settings?section=audit-governance", hidden: true },
   ],
 };
 
@@ -172,7 +172,7 @@ const platformSection: NavSection = {
   children: [
     { label: "Tenants",       path: "/app/kora-admin/tenants" },
     { label: "Subscriptions", path: "/app/kora-admin/subscriptions" },
-    { label: "Users",         path: "/app/kora-admin/users" },
+    { label: "Users & Roles", path: "/app/kora-admin/users" },
     { label: "Feature Flags", path: "/app/kora-admin/features" },
     { label: "Revenue",       path: "/app/kora-admin/revenue" },
     { label: "AI Usage",      path: "/app/kora-admin/ai-usage" },

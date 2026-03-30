@@ -1,4 +1,4 @@
-import { renderHook, waitFor } from '@testing-library/react';
+import { act, renderHook, waitFor } from '@testing-library/react';
 import { setupServer } from 'msw/node';
 import { http, HttpResponse } from 'msw';
 import { useCrud } from '../hooks/useCrud';
@@ -9,6 +9,14 @@ const mockData = [
 ];
 
 const server = setupServer(
+  http.get('/api/csrf-token', () => {
+    return HttpResponse.json({
+      success: true,
+      data: { csrfToken: 'csrf-test-token' },
+      meta: null,
+    });
+  }),
+
   http.get('/api/clients', () => {
     return HttpResponse.json(mockData);
   }),
@@ -51,7 +59,9 @@ describe('useCrud Hook', () => {
     await waitFor(() => expect(result.current.loading).toBe(false));
     
     const newClient = { name: 'Bob Wilson', email: 'bob@example.com' };
-    await result.current.create(newClient as any);
+    await act(async () => {
+      await result.current.create(newClient as any);
+    });
     
     // Should refetch data after create
     expect(result.current.data).toEqual(mockData);
@@ -62,7 +72,9 @@ describe('useCrud Hook', () => {
     
     await waitFor(() => expect(result.current.loading).toBe(false));
     
-    await result.current.update('1', { name: 'John Updated' } as any);
+    await act(async () => {
+      await result.current.update('1', { name: 'John Updated' } as any);
+    });
     
     // Should refetch data after update
     expect(result.current.data).toEqual(mockData);
@@ -73,7 +85,9 @@ describe('useCrud Hook', () => {
     
     await waitFor(() => expect(result.current.loading).toBe(false));
     
-    await result.current.deleteItem('1');
+    await act(async () => {
+      await result.current.deleteItem('1');
+    });
     
     // Should refetch data after delete
     expect(result.current.data).toEqual(mockData);

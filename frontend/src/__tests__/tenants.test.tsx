@@ -5,6 +5,7 @@ import { MemoryRouter, Routes, Route } from "react-router-dom";
 import TenantsListPage from "@/pages/tenants/ListPage";
 import TenantsCreatePage from "@/pages/tenants/CreatePage";
 import TenantsEditPage from "@/pages/tenants/EditPage";
+import * as platformAdmin from "@/services/platformAdmin";
 
 const tenantsData = [
   {
@@ -16,43 +17,57 @@ const tenantsData = [
   },
 ];
 
-const createMock = vi.fn();
-const updateMock = vi.fn();
-const deleteItemMock = vi.fn();
-const refetchMock = vi.fn();
-
-// Mock the useCrud hook so we don't hit the network
-vi.mock("@/hooks/useCrud", () => ({
-  useCrud: () => ({
-    data: tenantsData,
-    loading: false,
-    error: null,
-    create: createMock,
-    update: updateMock,
-    deleteItem: deleteItemMock,
-    refetch: refetchMock,
-  }),
-}));
-
-const WithRouter = ({ children }: { children: React.ReactNode }) => (
-  <MemoryRouter initialEntries={["/app/kora-admin/tenants"]}>{children}</MemoryRouter>
-);
+vi.mock("@/services/platformAdmin", async () => {
+  const actual = await vi.importActual<typeof import("@/services/platformAdmin")>("@/services/platformAdmin");
+  return {
+    ...actual,
+    getTenants: vi.fn(),
+    getTenant: vi.fn(),
+    updateTenantStatus: vi.fn(),
+    updateTenant: vi.fn(),
+  };
+});
 
 describe("Tenants CRUD UI", () => {
+  beforeEach(() => {
+    vi.mocked(platformAdmin.getTenants).mockResolvedValue(tenantsData);
+    vi.mocked(platformAdmin.getTenant).mockResolvedValue(tenantsData[0]);
+    vi.mocked(platformAdmin.updateTenantStatus).mockResolvedValue(tenantsData[0]);
+    vi.mocked(platformAdmin.updateTenant).mockResolvedValue(tenantsData[0]);
+  });
+
   test("List page renders a tenant row", async () => {
-    render(<TenantsListPage />, { wrapper: WithRouter });
-    expect(screen.getByText("Acme Corp")).toBeInTheDocument();
-    expect(screen.getByText("Wellness")).toBeInTheDocument();
-    expect(screen.getByText("active")).toBeInTheDocument();
+    render(
+      <MemoryRouter initialEntries={["/app/kora-admin/tenants"]}>
+        <TenantsListPage />
+      </MemoryRouter>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText("Acme Corp")).toBeInTheDocument();
+      expect(screen.getByText("Wellness")).toBeInTheDocument();
+      expect(screen.getByText("active")).toBeInTheDocument();
+    });
   });
 
   test("Create button navigates to the create page", async () => {
-    render(<TenantsListPage />, { wrapper: WithRouter });
+    render(
+      <MemoryRouter initialEntries={["/app/kora-admin/tenants"]}>
+        <Routes>
+          <Route path="/app/kora-admin/tenants" element={<TenantsListPage />} />
+          <Route path="/app/kora-admin/tenants/create" element={<TenantsCreatePage />} />
+        </Routes>
+      </MemoryRouter>
+    );
+
+    await waitFor(() => expect(screen.getByText("Acme Corp")).toBeInTheDocument());
     const createBtn = screen.getByRole("button", { name: /new tenant/i });
     fireEvent.click(createBtn);
-    render(<TenantsCreatePage />, { wrapper: WithRouter });
-    expect(screen.getByLabelText(/tenant name/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/industry/i)).toBeInTheDocument();
+
+    await waitFor(() => {
+      expect(screen.getByLabelText(/tenant name/i)).toBeInTheDocument();
+      expect(screen.getByLabelText(/industry/i)).toBeInTheDocument();
+    });
   });
 
   test("Edit button opens the edit form with pre-filled data", async () => {

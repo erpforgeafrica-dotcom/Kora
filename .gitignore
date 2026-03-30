@@ -9,6 +9,7 @@ backend/backend-live.log
 backend/backend-live.err.log
 backend/.tmp/
 backend/.npm-cache/
+backend/test_output.txt
 
 # Playwright
 /test-results/

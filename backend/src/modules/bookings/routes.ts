@@ -12,13 +12,15 @@ export const bookingsRoutes = Router();
  * Canonical v1.2 Bookings CRUD (organization_id scoped).
  *
  * This endpoint family is the operational backbone of the platform workflow.
- * List responses are shaped for existing frontend `useCrud` parsing:
- * - list returns `{ bookings: [...] }`
+ * List responses follow the canonical shared response contract.
  */
 
 bookingsRoutes.get("/", requireRole("business_admin", "platform_admin", "staff"), async (req, res, next) => {
   try {
     const organizationId = getRequiredOrganizationId(res);
+    const limit = Math.min(500, Math.max(1, Number(req.query.limit ?? 20) || 20));
+    const page = Math.max(1, Number(req.query.page ?? 1) || 1);
+    const offset = (page - 1) * limit;
 
     const rows = await queryDb(
       `select b.id::text,
@@ -43,11 +45,17 @@ bookingsRoutes.get("/", requireRole("business_admin", "platform_admin", "staff")
            on s.id = b.service_id and s.organization_id = b.organization_id
         where b.organization_id = $1
         order by b.start_time desc
-        limit 500`,
-      [organizationId]
+        limit $2
+       offset $3`,
+      [organizationId, limit, offset]
     );
 
-    return respondList(req, res, rows, { count: rows.length, limit: 500, page: 1 });
+    return respondList(req, res, rows, {
+      count: rows.length,
+      limit,
+      page,
+      offset,
+    });
   } catch (error) {
     return next(error);
   }
@@ -468,4 +476,3 @@ bookingsRoutes.get("/staff/:staffId/shifts", requireRole("business_admin", "plat
     return next(error);
   }
 });
-

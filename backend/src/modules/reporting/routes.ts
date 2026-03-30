@@ -56,11 +56,11 @@ reportingRoutes.post("/generate", async (req, res, next) => {
       requestedBy: res.locals.auth.userId
     });
 
-    return res.status(202).json({
+    return respondSuccess(res, {
       accepted: true,
       queue: "reporting",
       jobId: job.id
-    });
+    }, 202);
   } catch (err) {
     return next(err);
   }
