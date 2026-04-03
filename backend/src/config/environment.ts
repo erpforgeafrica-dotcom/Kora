@@ -22,13 +22,7 @@ const REQUIRED_VARS = [
   'DATABASE_URL',
   'REDIS_URL', 
   'JWT_SECRET',
-  'SESSION_SECRET',
-  'CLERK_SECRET_KEY'
-] as const;
-
-const PRODUCTION_REQUIRED_VARS = [
-  'SENTRY_DSN',
-  'STRIPE_SECRET_KEY'
+  'SESSION_SECRET'
 ] as const;
 
 function validateEnvironmentVariable(name: string, value: string | undefined): string {
@@ -49,6 +43,14 @@ function validateEnvironmentVariable(name: string, value: string | undefined): s
   }
   
   return value.trim();
+}
+
+function validateOptionalEnvironmentVariable(name: string, value: string | undefined): string {
+  if (!value || value.trim() === '') {
+    return '';
+  }
+
+  return validateEnvironmentVariable(name, value);
 }
 
 function validateNumericEnvironmentVariable(name: string, value: string | undefined, defaultValue: number): number {
@@ -72,12 +74,7 @@ export function validateEnvironment(): EnvironmentConfig {
     isProduction 
   });
   
-  // Validate required variables
-  const requiredVars = isProduction 
-    ? [...REQUIRED_VARS, ...PRODUCTION_REQUIRED_VARS]
-    : REQUIRED_VARS;
-    
-  for (const varName of requiredVars) {
+  for (const varName of REQUIRED_VARS) {
     const value = process.env[varName];
     if (!value || value.trim() === '') {
       throw new Error(`STARTUP FAILED: Required environment variable ${varName} is missing or empty`);
@@ -92,13 +89,9 @@ export function validateEnvironment(): EnvironmentConfig {
       REDIS_URL: validateEnvironmentVariable('REDIS_URL', process.env.REDIS_URL),
       JWT_SECRET: validateEnvironmentVariable('JWT_SECRET', process.env.JWT_SECRET),
       SESSION_SECRET: validateEnvironmentVariable('SESSION_SECRET', process.env.SESSION_SECRET),
-      SENTRY_DSN: isProduction 
-        ? validateEnvironmentVariable('SENTRY_DSN', process.env.SENTRY_DSN)
-        : process.env.SENTRY_DSN || '',
-      CLERK_SECRET_KEY: validateEnvironmentVariable('CLERK_SECRET_KEY', process.env.CLERK_SECRET_KEY),
-      STRIPE_SECRET_KEY: isProduction
-        ? validateEnvironmentVariable('STRIPE_SECRET_KEY', process.env.STRIPE_SECRET_KEY)
-        : process.env.STRIPE_SECRET_KEY || '',
+      SENTRY_DSN: validateOptionalEnvironmentVariable('SENTRY_DSN', process.env.SENTRY_DSN),
+      CLERK_SECRET_KEY: validateOptionalEnvironmentVariable('CLERK_SECRET_KEY', process.env.CLERK_SECRET_KEY),
+      STRIPE_SECRET_KEY: validateOptionalEnvironmentVariable('STRIPE_SECRET_KEY', process.env.STRIPE_SECRET_KEY),
       LOG_LEVEL: process.env.LOG_LEVEL || (isProduction ? 'info' : 'debug'),
       DB_POOL_MAX: validateNumericEnvironmentVariable('DB_POOL_MAX', process.env.DB_POOL_MAX, isProduction ? 25 : 10),
       DB_POOL_MIN: validateNumericEnvironmentVariable('DB_POOL_MIN', process.env.DB_POOL_MIN, isProduction ? 5 : 2),
@@ -111,7 +104,12 @@ export function validateEnvironment(): EnvironmentConfig {
       NODE_ENV: config.NODE_ENV,
       PORT: config.PORT,
       DB_POOL_MAX: config.DB_POOL_MAX,
-      LOG_LEVEL: config.LOG_LEVEL
+      LOG_LEVEL: config.LOG_LEVEL,
+      optionalIntegrations: {
+        clerk: Boolean(config.CLERK_SECRET_KEY),
+        sentry: Boolean(config.SENTRY_DSN),
+        stripe: Boolean(config.STRIPE_SECRET_KEY)
+      }
     });
     
     return config;
