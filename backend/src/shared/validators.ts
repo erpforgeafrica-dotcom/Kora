@@ -6,7 +6,7 @@ export const createClientSchema = z.object({
   email: z.string().email("Invalid email address"),
   phone: z.string().optional().nullable(),
   telehealth_consent: z.boolean().optional(),
-  preferences: z.record(z.any()).optional(),
+  preferences: z.record(z.string(), z.any()).optional(),
 });
 
 export const updateClientSchema = createClientSchema.partial();
@@ -60,7 +60,7 @@ export const createStaffSchema = z.object({
   clerk_user_id: z.string().optional().nullable(),
   user_id: z.string().uuid().optional().nullable(),
   specializations: z.array(z.string()).optional(),
-  availability: z.record(z.any()).optional(),
+  availability: z.record(z.string(), z.any()).optional(),
   photo_url: z.string().url().optional().nullable(),
 });
 
@@ -133,9 +133,9 @@ export function validateInput<T>(schema: z.ZodSchema<T>, data: unknown): { valid
   } catch (error) {
     if (error instanceof z.ZodError) {
       const errors: Record<string, string> = {};
-      error.errors.forEach((err) => {
-        const path = err.path.join(".");
-        errors[path] = err.message;
+      error.issues.forEach((issue) => {
+        const path = issue.path.join(".");
+        errors[path] = issue.message;
       });
       return { valid: false, errors };
     }

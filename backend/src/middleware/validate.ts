@@ -16,9 +16,9 @@ export function validateBody<T>(schema: z.ZodSchema<T>) {
     } catch (error) {
       if (error instanceof z.ZodError) {
         const errors: Record<string, string> = {};
-        error.errors.forEach((err) => {
-          const path = err.path.join(".");
-          errors[path] = err.message;
+        error.issues.forEach((issue) => {
+          const path = issue.path.join(".");
+          errors[path] = issue.message;
         });
         return res.status(422).json({
           error: {
@@ -50,9 +50,9 @@ export function validateQuery<T>(schema: z.ZodSchema<T>) {
     } catch (error) {
       if (error instanceof z.ZodError) {
         const errors: Record<string, string> = {};
-        error.errors.forEach((err) => {
-          const path = err.path.join(".");
-          errors[path] = err.message;
+        error.issues.forEach((issue) => {
+          const path = issue.path.join(".");
+          errors[path] = issue.message;
         });
         return res.status(422).json({
           error: {

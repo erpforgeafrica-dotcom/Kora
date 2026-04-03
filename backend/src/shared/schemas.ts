@@ -91,7 +91,7 @@ export const updateEmergencyStatusSchema = z.object({
 export const orchestrateCommandSchema = z.object({
   action: z.string().min(1).max(255),
   module: z.string().min(1).max(50),
-  params: z.record(z.unknown()).optional(),
+  params: z.record(z.string(), z.unknown()).optional(),
   auto_execute: z.boolean().default(false),
 });
 
