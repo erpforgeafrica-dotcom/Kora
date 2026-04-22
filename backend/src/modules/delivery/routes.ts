@@ -15,7 +15,15 @@ const dispatchRoles = requireRole("dispatcher", "operations", "business_admin", 
 router.get("/bookings", dispatchRoles, async (req, res, next) => {
   try {
     const orgId = getRequiredOrganizationId(res);
-    const rows = await svc.listBookings(orgId);
+    const status = typeof req.query.status === "string" ? req.query.status : null;
+    const validStatuses = ["pending","assigned","pickup_en_route","picked_up","in_transit","delivered","failed","cancelled"];
+    const params: unknown[] = [orgId];
+    let filter = "";
+    if (status && validStatuses.includes(status)) {
+      filter = " AND status = $2";
+      params.push(status);
+    }
+    const rows = await svc.listBookings(orgId, filter, params);
     respondList(req, res, rows, { count: rows.length, limit: 200, page: 1 });
   } catch (err) { next(err); }
 });

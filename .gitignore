@@ -2,6 +2,13 @@ node_modules/
 dist/
 .env
 .env.local
+.env.production
+.env.staging
+.env.demo
+.env.development
+.env.prod
+.env.*
+!.env.example
 .DS_Store
 *.log
 frontend/.edge-clean-profile/

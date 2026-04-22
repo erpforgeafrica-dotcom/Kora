@@ -754,10 +754,13 @@ aiRoutes.post("/config", ...orchestrateLimiter, requirePlan('business'), async (
     const organizationId = res.locals.auth.organizationId;
     if (!organizationId) return respondError(res, "MISSING_ORGANIZATION_ID", "Missing organization id", 400);
 
-    const enableAnomalies = req.body?.enableAnomalies ?? true;
-    const enableAutoAssignment = req.body?.enableAutoAssignment ?? true;
-    const anomalySensitivity = Number(req.body?.anomalySensitivity ?? 2.0);
-    const similarityCutoff = Number(req.body?.similarityCutoff ?? 0.70);
+    const enableAnomalies = typeof req.body?.enableAnomalies === 'boolean' ? req.body.enableAnomalies : true;
+    const enableAutoAssignment = typeof req.body?.enableAutoAssignment === 'boolean' ? req.body.enableAutoAssignment : true;
+    const anomalySensitivity = Math.min(10, Math.max(0.1, Number(req.body?.anomalySensitivity ?? 2.0)));
+    const similarityCutoff = Math.min(1.0, Math.max(0.1, Number(req.body?.similarityCutoff ?? 0.70)));
+    if (isNaN(anomalySensitivity) || isNaN(similarityCutoff)) {
+      return respondError(res, "VALIDATION_ERROR", "anomalySensitivity and similarityCutoff must be numbers", 400);
+    }
 
     // UPSERT semantic for config bounds
     await queryDb(`

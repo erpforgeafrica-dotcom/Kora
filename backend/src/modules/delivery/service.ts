@@ -1,15 +1,15 @@
 import { queryDb } from "../../db/client.js";
 import type { RequestUser } from "../../shared/types.js";
 
-export async function listBookings(orgId: string) {
+export async function listBookings(orgId: string, filter = "", params: unknown[] = [orgId]) {
   return queryDb(
     `select id::text, customer_name, customer_phone, pickup_address, dropoff_address,
             pickup_at, dropoff_at, price_cents, currency, status, created_at
        from delivery_bookings
-      where organization_id = $1
+      where organization_id = $1${filter}
       order by created_at desc
       limit 200`,
-    [orgId]
+    params
   );
 }
 
