@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { useAuthContext } from "@/contexts/AuthContext";
 import { useTheme, type ThemeId } from "@/contexts/ThemeContext";
 import { useAppStore } from "@/stores/useAppStore";
+import { apiClient } from "@/services/api";
 
 type SettingsSectionId =
   | "overview"
@@ -154,9 +155,24 @@ export default function SettingsPage() {
   const activeSectionId = useMemo(() => getActiveSection(location.search), [location.search]);
   const activeSection = sections.find((section) => section.id === activeSectionId) ?? sections[0];
 
-  const handleSaveSettings = () => {
-    setSaveMessage("Settings staged locally for the current workspace shell.");
-    window.setTimeout(() => setSaveMessage(null), 2400);
+  const handleSaveSettings = async () => {
+    try {
+      await apiClient.patch("/api/tenant/settings", {
+        name: companyName,
+        email: workspaceEmail,
+        default_role: defaultRole,
+        require_mfa: requireMfa,
+        notifications_enabled: notificationsEnabled,
+        email_notifications: emailNotifications,
+        auto_save: autoSave,
+        ai_assistant_mode: assistantMode,
+        ai_daily_budget: Number(dailyBudget),
+      });
+      setSaveMessage("Settings saved successfully.");
+    } catch {
+      setSaveMessage("Save failed — check your connection and try again.");
+    }
+    window.setTimeout(() => setSaveMessage(null), 3000);
   };
 
   const formPanel = (

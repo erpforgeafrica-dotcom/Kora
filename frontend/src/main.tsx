@@ -24,19 +24,12 @@ if (typeof window !== "undefined") {
   if (bootFallback) bootFallback.setAttribute("hidden", "true");
 }
 
-const CLERK_PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY as string;
-if (!CLERK_PUBLISHABLE_KEY) {
-  throw new Error("VITE_CLERK_PUBLISHABLE_KEY is not set in frontend/.env");
-}
+const CLERK_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY as string;
+if (!CLERK_KEY) throw new Error("VITE_CLERK_PUBLISHABLE_KEY is not set in frontend/.env");
 
 export const queryClient = new QueryClient({
   defaultOptions: {
-    queries: {
-      staleTime: 5 * 60 * 1000,
-      gcTime: 10 * 60 * 1000,
-      retry: 1,
-      refetchOnWindowFocus: false,
-    },
+    queries: { staleTime: 5 * 60 * 1000, gcTime: 10 * 60 * 1000, retry: 1, refetchOnWindowFocus: false },
     mutations: { retry: 0 },
   },
 });
@@ -44,7 +37,7 @@ export const queryClient = new QueryClient({
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <ErrorBoundary>
-      <ClerkProvider publishableKey={CLERK_PUBLISHABLE_KEY} afterSignOutUrl="/">
+      <ClerkProvider publishableKey={CLERK_KEY} afterSignOutUrl="/">
         <BrowserRouter>
           <QueryClientProvider client={queryClient}>
             <AuthProvider>

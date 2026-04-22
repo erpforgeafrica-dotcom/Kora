@@ -15,14 +15,9 @@ export interface AuthState {
 }
 
 /**
- * useAuth — Clerk-backed auth hook.
- *
- * Role resolution order:
- *   1. Clerk org membership role (org:admin → business_admin, org:member → staff)
- *   2. Clerk user publicMetadata.role
- *   3. Default → "client"
- *
- * orgId comes from the active Clerk organization, never from localStorage.
+ * useAuth — Clerk-backed.
+ * Role: Clerk org membership role → publicMetadata.role → "client"
+ * orgId: Clerk active organization — never from headers or localStorage alone
  */
 export function useAuth(): AuthState & {
   setToken: (token: string) => Promise<void>;
@@ -39,55 +34,29 @@ export function useAuth(): AuthState & {
 
   const isLoading = !clerkLoaded || !userLoaded || !orgLoaded;
 
-  // Resolve role from Clerk membership or publicMetadata
   const resolveRole = useCallback((): DashboardRole | null => {
     if (!user) return null;
-    // Clerk org role takes priority
     const clerkOrgRole = (membership as any)?.role as string | undefined;
     const metaRole = (user.publicMetadata as any)?.role as string | undefined;
     return normalizeDashboardRole(clerkOrgRole ?? metaRole ?? "client");
   }, [user, membership]);
 
-  // Fetch fresh Clerk JWT on mount and when session changes
+  // Refresh Clerk JWT whenever session changes
   useEffect(() => {
-    if (!clerkLoaded || !isSignedIn) {
-      setTokenState(null);
-      return;
-    }
+    if (!clerkLoaded || !isSignedIn) { setTokenState(null); return; }
     getToken().then(t => {
       setTokenState(t);
-      // Keep axios interceptor in sync
       if (t) localStorage.setItem("kora_token", t);
       else localStorage.removeItem("kora_token");
     }).catch(() => setTokenState(null));
   }, [clerkLoaded, isSignedIn, getToken, sessionId]);
 
-  // Keep org ID in sync with Clerk active org
+  // Keep org ID in localStorage for axios interceptor
   useEffect(() => {
-    if (organization?.id) {
-      localStorage.setItem("kora_org_id", organization.id);
-    }
+    if (organization?.id) localStorage.setItem("kora_org_id", organization.id);
   }, [organization?.id]);
 
   const orgId = organization?.id ?? localStorage.getItem("kora_org_id") ?? "org_placeholder";
-  const userId = user?.id ?? null;
-  const userRole = resolveRole();
-
-  const setToken = async (newToken: string) => {
-    localStorage.setItem("kora_token", newToken);
-    setTokenState(newToken);
-  };
-
-  const setOrgId = (newOrgId: string) => {
-    localStorage.setItem("kora_org_id", newOrgId);
-  };
-
-  const logout = () => {
-    signOut();
-    localStorage.removeItem("kora_token");
-    localStorage.removeItem("kora_org_id");
-    setTokenState(null);
-  };
 
   return {
     isAuthenticated: !!isSignedIn && !!token,
@@ -95,13 +64,13 @@ export function useAuth(): AuthState & {
     orgId,
     organizationId: orgId,
     token,
-    userId,
+    userId: user?.id ?? null,
     sessionId: sessionId ?? null,
-    userRole,
+    userRole: resolveRole(),
     error,
-    setToken,
-    setOrgId,
-    logout,
+    setToken: async (t: string) => { localStorage.setItem("kora_token", t); setTokenState(t); },
+    setOrgId: (id: string) => { localStorage.setItem("kora_org_id", id); },
+    logout: () => { signOut(); localStorage.removeItem("kora_token"); localStorage.removeItem("kora_org_id"); setTokenState(null); },
     setError,
   };
 }

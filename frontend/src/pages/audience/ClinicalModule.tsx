@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useAuthContext } from "@/contexts/AuthContext";
 import {
   getClinicalPatients, getClinicalAppointments, getClinicalNotes,
@@ -434,22 +434,44 @@ function RolePlaceholder({ role, tab }: { role: string; tab: string }) {
   );
 }
 
+// Map URL path segments to tab names
+const PATH_TO_TAB: Record<string, string> = {
+  "patients":      "Patients",
+  "appointments":  "Appointments",
+  "notes":         "Notes",
+  "prescriptions": "Prescriptions",
+  "lab":           "Lab Requests",
+  "pharmacy":      "Pharmacy",
+  "followups":     "Follow-ups",
+  "vitals":        "Vitals",
+  "compliance":    "Compliance",
+};
+
 // ─── Main export ──────────────────────────────────────────────────────────────
 export function ClinicalModule() {
   const { userRole } = useAuthContext();
+  const navigate = useNavigate();
+  const location = useLocation();
   const role = (userRole as string) ?? "staff";
   const cfg = ROLE_CONFIG[role] ?? ROLE_CONFIG.staff;
-  const [activeTab, setActiveTab] = useState(cfg.tabs[0]);
-  const [selectedPatient, setSelectedPatient] = useState<ClinicalPatient | null>(null);
 
-  // Reset tab when role changes
-  useEffect(() => {
-    const newCfg = ROLE_CONFIG[role] ?? ROLE_CONFIG.staff;
-    setActiveTab(newCfg.tabs[0]);
-  }, [role]);
+  // Derive active tab from URL path — fixes deep linking
+  const pathSegment = location.pathname.split("/").pop() ?? "";
+  const tabFromPath = PATH_TO_TAB[pathSegment];
+  const defaultTab = cfg.tabs[0];
+  const activeTab = tabFromPath && cfg.tabs.includes(tabFromPath) ? tabFromPath : defaultTab;
+
+  const [selectedPatient, setSelectedPatient] = useState<ClinicalPatient | null>(null);
 
   const patientTabs = ["Patients", "Appointments", "Notes", "Vitals", "Follow-ups", "Care Notes"];
   const showPatientPanel = patientTabs.includes(activeTab);
+
+  function handleTabClick(tab: string) {
+    // Navigate to the corresponding URL so deep links work
+    const pathKey = Object.entries(PATH_TO_TAB).find(([, v]) => v === tab)?.[0];
+    if (pathKey) navigate(`/app/clinical/${pathKey}`);
+    else navigate("/app/clinical");
+  }
 
   return (
     <div style={{ display: "grid", gap: 20 }}>
@@ -480,7 +502,7 @@ export function ClinicalModule() {
             <button
               key={tab}
               type="button"
-              onClick={() => setActiveTab(tab)}
+              onClick={() => handleTabClick(tab)}
               style={{
                 padding: "8px 14px", borderRadius: 10, fontSize: 12, fontWeight: 600, cursor: "pointer",
                 border: activeTab === tab
