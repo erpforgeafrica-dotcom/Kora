@@ -65,6 +65,7 @@ import { billingRoutes } from "./modules/billing/billingRoutes.js";
 import { workflowRoutes } from "./workflows/routes.js";
 import { contentRoutes, publicContentRoutes } from "./modules/content/routes.js";
 import { supportRoutes } from "./modules/support/routes.js";
+import { gdprRoutes } from "./modules/gdpr/routes.js";
 import { clerkWebhookRoutes } from "./modules/webhooks/clerkRoutes.js";
 import { stripeWebhookRoutes } from "./modules/webhooks/stripeRoutes.js";
 import { requireFeature, checkUsageLimit } from "./middleware/planGate.js";
@@ -241,6 +242,7 @@ export function createApp() {
   // Content / Blog
   app.use("/api/content/public", publicContentRoutes);
   app.use("/api/content", requireAuth, contentRoutes);
+  app.use("/api/gdpr", requireAuth, gdprRoutes);
 
   // ==========================================
   // JSON 404 HANDLER FOR UNMOUNTED /api/* (BEFORE static files)
