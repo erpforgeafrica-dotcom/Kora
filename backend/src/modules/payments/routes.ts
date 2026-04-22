@@ -1,11 +1,11 @@
 import type { Request, Response, NextFunction } from "express";
 import { Router } from "express";
 import { queryDb } from "../../db/client.js";
+import { getRequiredOrganizationId } from "../../shared/http.js";
 import { authorize } from "../../middleware/rbac.js";
 import { withCustomerAlias, withTenantAlias } from "../../shared/blueprintAliases.js";
 import { respondError, respondList, respondSuccess } from "../../shared/response.js";
-import {
-  attachPaymentMethod,
+import { getRequiredOrganizationId } from "../../shared/http.js";
   createPaymentIntent,
   createRefund,
   getRevenueCycleMetrics,

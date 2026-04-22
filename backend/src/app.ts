@@ -112,11 +112,17 @@ export function createApp() {
   app.use(correlationIdMiddleware);
 
   // ==========================================
-  // WEBHOOKS — must be mounted BEFORE JSON body parser
-  // Raw body is captured via the verify callback below
+  // WEBHOOKS — raw body required, mounted BEFORE JSON parser
+  // Single Stripe handler at /api/webhooks/stripe (signature-verified)
+  // Legacy /api/payments/webhook redirects here for backwards compat
   // ==========================================
   app.use("/api/webhooks", clerkWebhookRoutes);
   app.use("/api/webhooks", stripeWebhookRoutes);
+  // Legacy Stripe webhook path — same handler, different mount point
+  app.post("/api/payments/webhook", (req, res, next) => {
+    req.url = "/stripe";
+    (stripeWebhookRoutes as any)(req, res, next);
+  });
 
   // Body parsing with raw body capture for webhooks
   app.use(express.json({
@@ -190,7 +196,6 @@ export function createApp() {
   // NOTE: appointments/availability are intentionally not mounted in v1.2 canonicalization
   // until the availability subsystem is rebuilt against the enabled migration chain.
   app.use("/api/payments", requireAuth, cacheMiddleware(60), paymentsModuleRoutes);
-  app.post("/api/payments/webhook", paymentsWebhookHandler);
   app.use("/api/crm", requireAuth, requireFeature("module_crm"), cacheMiddleware(300), invalidateCacheMiddleware(["/api/crm*"]), crmRoutes);
   app.use("/api/inventory", requireAuth, requireFeature("module_inventory"), cacheMiddleware(300), invalidateCacheMiddleware(["/api/inventory*"]), inventoryRoutes);
   app.use("/api/delivery", requireAuth, requireFeature("module_delivery"), cacheMiddleware(180), deliveryRoutes);

@@ -1,40 +1,68 @@
-import { Request, Response, NextFunction } from 'express';
-import { queryDb } from '../db/index.js';
+import { Request, Response, NextFunction } from "express";
+import { respondError } from "../shared/response.js";
 
-const PLAN_HIERARCHY = {
-  basic: 0,
-  pro: 1,
-  business: 2,
-  enterprise: 3
+/**
+ * DEPRECATED — use requireFeature() from middleware/planGate.ts instead.
+ *
+ * This file is kept for backwards compatibility with ai/routes.ts which
+ * uses requirePlan('basic'|'pro'|'business'|'enterprise').
+ *
+ * Mapping to new plan IDs:
+ *   basic      → starter
+ *   pro        → growth
+ *   business   → professional
+ *   enterprise → enterprise
+ */
+
+const PLAN_MAP: Record<string, string> = {
+  basic:      "starter",
+  pro:        "growth",
+  business:   "professional",
+  enterprise: "enterprise",
 };
 
-// We intercept here to ensure the plan allows access.
-export function requirePlan(minimumPlan: keyof typeof PLAN_HIERARCHY) {
-  return async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      const organizationId = res.locals.auth?.organizationId;
-      if (!organizationId) {
-        return res.status(401).json({ error: 'unauthorized', message: 'Organization ID is required for this action.' });
-      }
+const PLAN_ORDER = ["starter", "growth", "professional", "enterprise"];
 
-      const rows = await queryDb<{ ai_plan: string }>('SELECT ai_plan FROM organizations WHERE id = $1', [organizationId]);
-      
-      const currentPlan = (rows[0]?.ai_plan || 'basic') as keyof typeof PLAN_HIERARCHY;
-      const currentLevel = PLAN_HIERARCHY[currentPlan] ?? 0;
-      const requiredLevel = PLAN_HIERARCHY[minimumPlan] ?? 0;
+export function requirePlan(minimumPlan: "basic" | "pro" | "business" | "enterprise") {
+  const mappedMinimum = PLAN_MAP[minimumPlan] ?? "starter";
+  const requiredLevel = PLAN_ORDER.indexOf(mappedMinimum);
+
+  return async (req: Request, res: Response, next: NextFunction) => {
+    const organizationId = res.locals.auth?.organizationId;
+    if (!organizationId) {
+      return respondError(res, "UNAUTHORIZED", "Organization context required", 401);
+    }
+
+    try {
+      // Import planGate dynamically to avoid circular deps
+      const { invalidatePlanCache } = await import("./planGate.js");
+      const { queryDb } = await import("../db/client.js");
+
+      const rows = await queryDb(
+        `SELECT s.plan_id FROM subscriptions s
+         WHERE s.organization_id = $1 AND s.status IN ('active','trialing')
+         ORDER BY s.created_at DESC LIMIT 1`,
+        [organizationId]
+      ).catch(() => [] as any[]);
+
+      const currentPlanId = rows[0]?.plan_id ?? "starter";
+      const currentLevel = PLAN_ORDER.indexOf(currentPlanId);
+
+      // Store for downstream use (ai/routes.ts reads res.locals.auth.ai_plan)
+      res.locals.auth.ai_plan = currentPlanId;
 
       if (currentLevel < requiredLevel) {
-        return res.status(403).json({
-          error: 'upgrade_required',
-          message: `This feature requires the ${minimumPlan.toUpperCase()} plan. You are currently on the ${currentPlan.toUpperCase()} plan.`
-        });
+        return respondError(res, "UPGRADE_REQUIRED",
+          `This feature requires the ${mappedMinimum} plan. You are on ${currentPlanId}.`,
+          402,
+          { current_plan: currentPlanId, required_plan: mappedMinimum, upgrade_url: "/app/settings?section=billing" }
+        );
       }
 
-      // Stash plan for downstream usage trackers if necessary
-      res.locals.auth.ai_plan = currentPlan;
-      next();
-    } catch (error) {
-      next(error);
+      return next();
+    } catch {
+      // If plan check fails, allow through — don't block on infrastructure errors
+      return next();
     }
   };
 }

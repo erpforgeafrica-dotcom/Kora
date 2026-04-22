@@ -384,7 +384,7 @@ aiRoutes.post("/assign-staff", ...orchestrateLimiter, requirePlan('pro'), async 
         // Compute Workload: count of bookings in the next 7 days
         const workloadRes = await queryDb<{ count: string }>(`
           SELECT COUNT(*) as count FROM bookings
-          WHERE staff_id = $1 AND start_time > NOW() AND start_time < NOW() + INTERVAL '7 days'
+          WHERE staff_member_id = $1 AND start_time > NOW() AND start_time < NOW() + INTERVAL '7 days'
         `, [staff.entity_id]);
         
         const bookingCount = Number(workloadRes[0]?.count || 0);
@@ -616,12 +616,23 @@ aiRoutes.get("/metrics", ...insightsLimiter, requirePlan('basic'), async (req, r
       SELECT COUNT(*) as count FROM ai_decision_logs WHERE organization_id = $1
     `, [organizationId]);
 
+    const perf = await queryDb<{ avg_latency: string; success_count: string; total_count: string }>(`
+      SELECT
+        AVG(latency_ms)::text AS avg_latency,
+        COUNT(*) FILTER (WHERE latency_ms < 5000)::text AS success_count,
+        COUNT(*)::text AS total_count
+      FROM ai_requests
+      WHERE organization_id = $1
+        AND created_at > NOW() - INTERVAL '7 days'
+    `, [organizationId]).catch(() => [{ avg_latency: '0', success_count: '0', total_count: '0' }]);
+
     respondSuccess(res, {
       totalTokens: Number(usage[0]?.total_tokens || 0),
       totalCost: Number(usage[0]?.total_cost || 0),
       decisionCount: Number(decisions[0]?.count || 0),
-      avgResponseTimeMs: 420, // Example placeholder
-      successRatePct: 99.8    // Example placeholder
+      avgResponseTimeMs: Math.round(Number(perf[0]?.avg_latency || 0)),
+      successRatePct: perf[0]?.total_count === '0' ? 100
+        : Math.round((Number(perf[0]?.success_count) / Number(perf[0]?.total_count)) * 1000) / 10
     });
   } catch (err) { next(err); }
 });
