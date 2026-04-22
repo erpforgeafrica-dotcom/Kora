@@ -21,7 +21,7 @@ export async function callClaude(
   });
 
   const content = response.content
-    .filter((item) => item.type === "text")
+    .filter((item): item is Anthropic.TextBlock => item.type === "text")
     .map((item) => item.text)
     .join("\n");
 

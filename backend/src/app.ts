@@ -65,6 +65,9 @@ import { billingRoutes } from "./modules/billing/billingRoutes.js";
 import { workflowRoutes } from "./workflows/routes.js";
 import { contentRoutes, publicContentRoutes } from "./modules/content/routes.js";
 import { supportRoutes } from "./modules/support/routes.js";
+import { clerkWebhookRoutes } from "./modules/webhooks/clerkRoutes.js";
+import { stripeWebhookRoutes } from "./modules/webhooks/stripeRoutes.js";
+import { requireFeature, checkUsageLimit } from "./middleware/planGate.js";
 
 const requireAuth = auth.requireAuth;
 const optionalAuth = auth.optionalAuth;
@@ -107,6 +110,13 @@ export function createApp() {
 
   // Correlation ID — must be first for tracing
   app.use(correlationIdMiddleware);
+
+  // ==========================================
+  // WEBHOOKS — must be mounted BEFORE JSON body parser
+  // Raw body is captured via the verify callback below
+  // ==========================================
+  app.use("/api/webhooks", clerkWebhookRoutes);
+  app.use("/api/webhooks", stripeWebhookRoutes);
 
   // Body parsing with raw body capture for webhooks
   app.use(express.json({
@@ -181,32 +191,32 @@ export function createApp() {
   // until the availability subsystem is rebuilt against the enabled migration chain.
   app.use("/api/payments", requireAuth, cacheMiddleware(60), paymentsModuleRoutes);
   app.post("/api/payments/webhook", paymentsWebhookHandler);
-  app.use("/api/crm", requireAuth, cacheMiddleware(300), invalidateCacheMiddleware(["/api/crm*"]), crmRoutes);
-  app.use("/api/inventory", requireAuth, cacheMiddleware(300), invalidateCacheMiddleware(["/api/inventory*"]), inventoryRoutes);
-  app.use("/api/delivery", requireAuth, cacheMiddleware(180), deliveryRoutes);
-  app.use("/api/support", requireAuth, supportRoutes);
+  app.use("/api/crm", requireAuth, requireFeature("module_crm"), cacheMiddleware(300), invalidateCacheMiddleware(["/api/crm*"]), crmRoutes);
+  app.use("/api/inventory", requireAuth, requireFeature("module_inventory"), cacheMiddleware(300), invalidateCacheMiddleware(["/api/inventory*"]), inventoryRoutes);
+  app.use("/api/delivery", requireAuth, requireFeature("module_delivery"), cacheMiddleware(180), deliveryRoutes);
+  app.use("/api/support", requireAuth, requireFeature("module_support"), supportRoutes);
   app.use("/api/tenant", requireAuth, cacheMiddleware(600), tenantRoutes);
   app.use("/api/tenants", requireAuth, cacheMiddleware(600), tenantsRoutes);
   app.use("/api/subscriptions", requireAuth, cacheMiddleware(600), subscriptionsRoutes);
 
   // Extended modules (may require schema completion via additive migrations)
   app.use("/api/discovery", discoveryRoutes);
-  app.use("/api/clinical", requireAuth, clinicalRoutes);
-  app.use("/api/emergency", requireAuth, emergencyRoutes);
+  app.use("/api/clinical", requireAuth, requireFeature("module_clinical"), clinicalRoutes);
+  app.use("/api/emergency", requireAuth, requireFeature("module_emergency"), emergencyRoutes);
   app.use("/api/finance", requireAuth, financeRoutes);
-  app.use("/api/ai", requireAuth, aiRoutes);
+  app.use("/api/ai", requireAuth, requireFeature("module_ai_insights"), aiRoutes);
   app.use("/api/notifications", requireAuth, notificationsRoutes);
-  app.use("/api/campaigns", requireAuth, campaignsRoutes);
-  app.use("/api/reporting", requireAuth, reportingRoutes);
-  app.use("/api/analytics", requireAuth, analyticsRoutes);
+  app.use("/api/campaigns", requireAuth, requireFeature("module_marketing"), campaignsRoutes);
+  app.use("/api/reporting", requireAuth, requireFeature("module_analytics"), reportingRoutes);
+  app.use("/api/analytics", requireAuth, requireFeature("module_analytics"), analyticsRoutes);
   app.use("/api/platform", requireAuth, resolveOrganizationContext, platformRoutes);
   app.use("/api/media", requireAuth, mediaRoutes);
   app.use("/api/reviews", requireAuth, reviewsRoutes);
   app.use("/api/marketplace", requireAuth, marketplaceRoutes);
-  app.use("/api/social", requireAuth, socialRoutes);
-  app.use("/api/social/auth", requireAuth, socialOAuthRoutes);
-  app.use("/api/video/consultations", requireAuth, videoConsultationRoutes);
-  app.use("/api/automation", requireAuth, automationRoutes);
+  app.use("/api/social", requireAuth, requireFeature("module_social"), socialRoutes);
+  app.use("/api/social/auth", requireAuth, requireFeature("module_social"), socialOAuthRoutes);
+  app.use("/api/video/consultations", requireAuth, requireFeature("module_video"), videoConsultationRoutes);
+  app.use("/api/automation", requireAuth, requireFeature("module_automation"), automationRoutes);
   app.use("/api/providers", requireAuth, providersRoutes);
   app.use("/api/geofence", requireAuth, geofenceRoutes);
   app.use("/api/chatbot", requireAuth, chatbotRoutes);

@@ -1,73 +1,79 @@
 import type { NextFunction, Request, Response } from "express";
 import { z } from "zod";
-import { ValidationError } from "./enhancedErrorHandler.js";
+import { respondError, respondValidationError } from "../shared/response.js";
 
 /**
- * Middleware to validate request body against a Zod schema
- * @param schema - Zod schema to validate against
+ * Zod validation middleware — canonical contract compliant.
+ * All errors return { success: false, error: { code, message, details } }
  */
+
+function formatZodErrors(error: z.ZodError): Record<string, string> {
+  const errors: Record<string, string> = {};
+  error.issues.forEach((issue) => {
+    const path = issue.path.length > 0 ? issue.path.join(".") : "_root";
+    errors[path] = issue.message;
+  });
+  return errors;
+}
+
+/** Validate req.body against a Zod schema. Returns 422 on failure. */
 export function validateBody<T>(schema: z.ZodSchema<T>) {
   return (req: Request, res: Response, next: NextFunction) => {
-    try {
-      const validated = schema.parse(req.body);
-      req.body = validated;
-      (req as typeof req & { parsedBody?: T }).parsedBody = validated;
-      return next();
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        const errors: Record<string, string> = {};
-        error.issues.forEach((issue) => {
-          const path = issue.path.join(".");
-          errors[path] = issue.message;
-        });
-        return res.status(422).json({
-          error: {
-            code: "VALIDATION_ERROR",
-            message: "Invalid request data",
-            context: { errors }
-          }
-        });
-      }
-      return res.status(400).json({
-        error: {
-          code: "BAD_REQUEST",
-          message: "Invalid request body"
-        }
+    const result = schema.safeParse(req.body);
+    if (!result.success) {
+      return respondValidationError(res, "Request body validation failed", {
+        errors: formatZodErrors(result.error),
       });
     }
+    req.body = result.data;
+    return next();
   };
 }
 
-/**
- * Middleware to validate query parameters against a Zod schema
- */
+/** Validate req.query against a Zod schema. Returns 422 on failure. */
 export function validateQuery<T>(schema: z.ZodSchema<T>) {
   return (req: Request, res: Response, next: NextFunction) => {
-    try {
-      const validated = schema.parse(req.query);
-      req.query = validated as any;
-      return next();
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        const errors: Record<string, string> = {};
-        error.issues.forEach((issue) => {
-          const path = issue.path.join(".");
-          errors[path] = issue.message;
-        });
-        return res.status(422).json({
-          error: {
-            code: "VALIDATION_ERROR",
-            message: "Invalid query parameters",
-            context: { errors }
-          }
-        });
-      }
-      return res.status(400).json({
-        error: {
-          code: "BAD_REQUEST",
-          message: "Invalid query parameters"
-        }
+    const result = schema.safeParse(req.query);
+    if (!result.success) {
+      return respondValidationError(res, "Query parameter validation failed", {
+        errors: formatZodErrors(result.error),
       });
     }
+    req.query = result.data as any;
+    return next();
   };
 }
+
+/** Validate req.params against a Zod schema. Returns 422 on failure. */
+export function validateParams<T>(schema: z.ZodSchema<T>) {
+  return (req: Request, res: Response, next: NextFunction) => {
+    const result = schema.safeParse(req.params);
+    if (!result.success) {
+      return respondValidationError(res, "Route parameter validation failed", {
+        errors: formatZodErrors(result.error),
+      });
+    }
+    req.params = result.data as any;
+    return next();
+  };
+}
+
+/** Shared Zod schemas used across multiple modules */
+export const commonSchemas = {
+  uuid: z.string().uuid("Must be a valid UUID"),
+  email: z.string().email("Must be a valid email address"),
+  nonEmptyString: z.string().min(1, "Cannot be empty"),
+  positiveInt: z.number().int().positive("Must be a positive integer"),
+  pagination: z.object({
+    page:  z.coerce.number().int().min(1).default(1),
+    limit: z.coerce.number().int().min(1).max(100).default(20),
+  }),
+  dateString: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Must be YYYY-MM-DD"),
+  isoDatetime: z.string().datetime({ message: "Must be a valid ISO 8601 datetime" }),
+  planId: z.enum(["starter", "growth", "professional", "enterprise"]),
+  billingInterval: z.enum(["monthly", "yearly"]),
+  currency: z.string().length(3).default("usd"),
+};
+
+/** Re-export zod for convenience */
+export { z };

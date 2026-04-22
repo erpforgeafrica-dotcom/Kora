@@ -251,7 +251,7 @@ export async function getSmartAutomationSuggestions(organizationId: string, prom
     });
 
     const text = response.content
-      .filter((item) => item.type === "text")
+      .filter((item): item is { type: "text"; text: string } => item.type === "text")
       .map((item) => item.text)
       .join("\n");
     return { ...JSON.parse(text), source: "claude" };
