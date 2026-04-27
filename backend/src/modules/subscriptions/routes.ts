@@ -9,7 +9,7 @@ import { logger } from "../../shared/logger.js";
 
 export const subscriptionsRoutes = Router();
 
-// ── Public: list all plans (no auth required) ─────────────────────────────────
+// ── Public: list all plans ────────────────────────────────────────────────────
 subscriptionsRoutes.get("/plans", async (req, res, next) => {
   try {
     const rows = await queryDb(
@@ -44,11 +44,11 @@ subscriptionsRoutes.get("/current", requireRole("business_admin", "platform_admi
     const organizationId = getRequiredOrganizationId(res);
     const rows = await queryDb(
       `SELECT
-         s.id::text, s.organization_id::text, s.plan_id,
+         s.id::text, s.organization_id::text, s.plan_id::text,
          s.status, s.billing_interval,
          s.current_period_start::text, s.current_period_end::text,
          s.trial_ends_at::text, s.cancel_at_period_end,
-         s.cancelled_at::text, s.provider_subscription_id,
+         s.cancelled_at::text,
          s.created_at::text,
          sp.name AS plan_name, sp.tagline AS plan_tagline,
          sp.price_monthly, sp.price_yearly, sp.is_free,
@@ -66,14 +66,13 @@ subscriptionsRoutes.get("/current", requireRole("business_admin", "platform_admi
     );
 
     if (!rows[0]) {
-      // Return starter plan info even if no subscription record exists
       const starter = await queryDb(
         `SELECT sp.*, pf.* FROM subscription_plans sp
          JOIN plan_features pf ON pf.plan_id = sp.id
          WHERE sp.slug = 'starter'`
       );
       return respondSuccess(res, {
-        plan_id: "starter",
+        plan_id: starter[0]?.id ?? null,
         status: "active",
         billing_interval: "free",
         is_free: true,
@@ -89,7 +88,6 @@ subscriptionsRoutes.get("/current", requireRole("business_admin", "platform_admi
 subscriptionsRoutes.get("/usage", requireRole("business_admin", "platform_admin", "operations"), async (req, res, next) => {
   try {
     const organizationId = getRequiredOrganizationId(res);
-
     const [bookings, staff, clients, locations, aiRequests] = await Promise.all([
       queryDb(`SELECT COUNT(*)::int AS n FROM bookings WHERE organization_id=$1 AND created_at >= date_trunc('month', now())`, [organizationId]),
       queryDb(`SELECT COUNT(*)::int AS n FROM staff_members WHERE organization_id=$1 AND status='active'`, [organizationId]),
@@ -97,9 +95,8 @@ subscriptionsRoutes.get("/usage", requireRole("business_admin", "platform_admin"
       queryDb(`SELECT COUNT(*)::int AS n FROM tenant_branches WHERE organization_id=$1`, [organizationId]).catch(() => [{ n: 1 }]),
       queryDb(`SELECT COALESCE(SUM(ai_requests_count),0)::int AS n FROM subscription_usage WHERE organization_id=$1 AND period_start >= date_trunc('month', now())`, [organizationId]).catch(() => [{ n: 0 }]),
     ]);
-
     return respondSuccess(res, {
-      period: new Date().toISOString().slice(0, 7), // YYYY-MM
+      period: new Date().toISOString().slice(0, 7),
       bookings_this_month: bookings[0]?.n ?? 0,
       active_staff: staff[0]?.n ?? 0,
       total_clients: clients[0]?.n ?? 0,
@@ -109,12 +106,11 @@ subscriptionsRoutes.get("/usage", requireRole("business_admin", "platform_admin"
   } catch (err) { return next(err); }
 });
 
-// ── Activate free Starter plan (no payment required) ─────────────────────────
+// ── Activate free Starter plan ────────────────────────────────────────────────
 subscriptionsRoutes.post("/activate-free", requireRole("business_admin", "platform_admin"), async (req, res, next) => {
   try {
     const organizationId = getRequiredOrganizationId(res);
 
-    // Check if already has active subscription
     const existing = await queryDb(
       `SELECT id FROM subscriptions WHERE organization_id=$1 AND status IN ('active','trialing') LIMIT 1`,
       [organizationId]
@@ -122,41 +118,24 @@ subscriptionsRoutes.post("/activate-free", requireRole("business_admin", "platfo
     if (existing[0]) return respondError(res, "ALREADY_SUBSCRIBED", "Organization already has an active subscription", 409);
 
     const row = await queryDb(
-      `INSERT INTO subscriptions (
-         id, organization_id, client_id, service_id, status, created_at
-       ) VALUES (
+      `INSERT INTO subscriptions (id, organization_id, plan_id, status, billing_interval, created_at)
+       VALUES (
          gen_random_uuid(), $1,
-         '00000000-0000-0000-0000-000000000000',
-         '00000000-0000-0000-0000-000000000000',
-         'active', now()
-       ) RETURNING id::text, status, created_at::text`,
+         (SELECT id FROM subscription_plans WHERE slug='starter' LIMIT 1),
+         'active', 'free', now()
+       ) RETURNING id::text, plan_id::text, status, billing_interval, created_at::text`,
       [organizationId]
-    );
-    
-    // Link the subscription to the plan
-    await queryDb(
-      `UPDATE subscriptions 
-       SET plan_id = (SELECT id FROM subscription_plans WHERE slug='starter' LIMIT 1),
-           billing_interval = 'monthly'
-       WHERE id = $1`,
-      [row[0].id]
-    );
-    
-    const finalRow = await queryDb(
-      `SELECT id::text, plan_id, status, billing_interval, created_at::text 
-       FROM subscriptions WHERE id = $1`,
-      [row[0].id]
     );
 
     await queryDb(
       `INSERT INTO subscription_events (organization_id, subscription_id, event_type, to_plan, actor_id)
        VALUES ($1, $2, 'created', 'starter', $3)`,
-      [organizationId, finalRow[0].id, res.locals.auth?.userId ?? null]
+      [organizationId, row[0].id, res.locals.auth?.userId ?? null]
     ).catch(() => {});
 
     invalidatePlanCache(organizationId);
     logger.info("Starter plan activated", { organizationId });
-    return respondSuccess(res, finalRow[0], 201);
+    return respondSuccess(res, row[0], 201);
   } catch (err) { return next(err); }
 });
 
@@ -164,109 +143,101 @@ subscriptionsRoutes.post("/activate-free", requireRole("business_admin", "platfo
 subscriptionsRoutes.post("/change-plan", requireRole("business_admin", "platform_admin"), async (req, res, next) => {
   try {
     const organizationId = getRequiredOrganizationId(res);
-    const newPlanId = String(req.body?.plan_id ?? "").trim();
+    const newPlanSlug = String(req.body?.plan_id ?? "").trim();
     const billingInterval = req.body?.billing_interval === "yearly" ? "yearly" : "monthly";
 
-    if (!["starter", "growth", "professional", "enterprise"].includes(newPlanId)) {
+    if (!["starter", "growth", "professional", "enterprise"].includes(newPlanSlug)) {
       return respondError(res, "INVALID_PLAN", "Invalid plan. Must be: starter, growth, professional, enterprise", 400);
     }
 
-    // Verify plan exists (newPlanId is a slug, not a UUID)
-    const plan = await queryDb(`SELECT * FROM subscription_plans WHERE slug=$1 AND is_active=true`, [newPlanId]);
+    const plan = await queryDb(`SELECT * FROM subscription_plans WHERE slug=$1 AND is_active=true`, [newPlanSlug]);
     if (!plan[0]) return respondError(res, "PLAN_NOT_FOUND", "Plan not found", 404);
 
-    // Get current subscription
     const current = await queryDb(
-      `SELECT id::text, plan_id, status FROM subscriptions WHERE organization_id=$1 AND status IN ('active','trialing') ORDER BY created_at DESC LIMIT 1`,
+      `SELECT s.id::text, s.plan_id::text, s.status, sp.slug AS plan_slug
+       FROM subscriptions s
+       JOIN subscription_plans sp ON sp.id = s.plan_id
+       WHERE s.organization_id=$1 AND s.status IN ('active','trialing')
+       ORDER BY s.created_at DESC LIMIT 1`,
       [organizationId]
     );
 
-    const fromPlan = current[0]?.plan_id ?? null;
-    const isUpgrade = !fromPlan || ["starter","growth","professional"].indexOf(fromPlan) < ["starter","growth","professional","enterprise"].indexOf(newPlanId);
+    const fromSlug = current[0]?.plan_slug ?? null;
+    const PLAN_ORDER = ["starter", "growth", "professional", "enterprise"];
+    const isUpgrade = !fromSlug || PLAN_ORDER.indexOf(fromSlug) < PLAN_ORDER.indexOf(newPlanSlug);
 
     if (plan[0].is_free) {
-      // Downgrade to free — immediate
       if (current[0]) {
         await queryDb(
-          `UPDATE subscriptions
-           SET plan_id=(SELECT id FROM subscription_plans WHERE slug='starter' LIMIT 1),
-               plan='starter', billing_interval='free',
-               status='active', cancel_at_period_end=false, updated_at=now()
-           WHERE id=$1`,
-          [current[0].id]
+          `UPDATE subscriptions SET plan_id=$2, billing_interval='free', status='active', cancel_at_period_end=false WHERE id=$1`,
+          [current[0].id, plan[0].id]
         );
       } else {
         await queryDb(
-          `INSERT INTO subscriptions (id, organization_id, plan_id, plan, status, billing_interval, current_period_start, current_period_end, created_at, updated_at)
-           VALUES (gen_random_uuid(), $1, (SELECT id FROM subscription_plans WHERE slug='starter' LIMIT 1), 'starter', 'active', 'free', now(), now() + INTERVAL '100 years', now(), now())`,
-          [organizationId]
+          `INSERT INTO subscriptions (id, organization_id, plan_id, status, billing_interval, created_at)
+           VALUES (gen_random_uuid(), $1, $2, 'active', 'free', now())`,
+          [organizationId, plan[0].id]
         );
       }
       invalidatePlanCache(organizationId);
-      await logSubscriptionEvent(organizationId, current[0]?.id, "downgraded", fromPlan, "starter", res.locals.auth?.userId);
-      return respondSuccess(res, { plan_id: "starter", status: "active", billing_interval: "free", effective: "immediate" });
+      await logSubscriptionEvent(organizationId, current[0]?.id, "downgraded", fromSlug, newPlanSlug, res.locals.auth?.userId);
+      return respondSuccess(res, { plan_id: plan[0].id, plan_slug: newPlanSlug, status: "active", billing_interval: "free", effective: "immediate" });
     }
 
-    // Paid plan — return Stripe checkout session URL
-    // In production this creates a Stripe Checkout Session
-    // For now return the plan details and signal frontend to initiate payment
-    const priceId = billingInterval === "yearly"
-      ? plan[0].stripe_price_id_yearly
-      : plan[0].stripe_price_id_monthly;
+    const priceId = billingInterval === "yearly" ? plan[0].stripe_price_id_yearly : plan[0].stripe_price_id_monthly;
+    const price   = billingInterval === "yearly" ? plan[0].price_yearly : plan[0].price_monthly;
 
-    const price = billingInterval === "yearly" ? plan[0].price_yearly : plan[0].price_monthly;
-
-    await logSubscriptionEvent(organizationId, current[0]?.id, isUpgrade ? "upgraded" : "downgraded", fromPlan, newPlanId, res.locals.auth?.userId);
+    await logSubscriptionEvent(organizationId, current[0]?.id, isUpgrade ? "upgraded" : "downgraded", fromSlug, newPlanSlug, res.locals.auth?.userId);
 
     return respondSuccess(res, {
-      plan_id: newPlanId,
+      plan_id: newPlanSlug,
       plan_name: plan[0].name,
       billing_interval: billingInterval,
       price_cents: price,
       currency: plan[0].currency,
       stripe_price_id: priceId,
-      // Frontend should use this to initiate Stripe Checkout
       checkout_required: true,
-      checkout_url: `/app/settings?section=billing&checkout=true&plan=${newPlanId}&interval=${billingInterval}`,
+      checkout_url: `/app/settings?section=billing&checkout=true&plan=${newPlanSlug}&interval=${billingInterval}`,
     });
   } catch (err) { return next(err); }
 });
 
-// ── Cancel subscription (at period end) ───────────────────────────────────────
+// ── Cancel subscription ───────────────────────────────────────────────────────
 subscriptionsRoutes.post("/cancel", requireRole("business_admin", "platform_admin"), async (req, res, next) => {
   try {
     const organizationId = getRequiredOrganizationId(res);
     const immediately = req.body?.immediately === true;
 
     const current = await queryDb(
-      `SELECT id::text, plan_id, status, current_period_end FROM subscriptions
-       WHERE organization_id=$1 AND status IN ('active','trialing') ORDER BY created_at DESC LIMIT 1`,
+      `SELECT s.id::text, s.plan_id::text, s.status, s.current_period_end::text, sp.slug AS plan_slug
+       FROM subscriptions s
+       JOIN subscription_plans sp ON sp.id = s.plan_id
+       WHERE s.organization_id=$1 AND s.status IN ('active','trialing')
+       ORDER BY s.created_at DESC LIMIT 1`,
       [organizationId]
     );
     if (!current[0]) return respondError(res, "NO_ACTIVE_SUBSCRIPTION", "No active subscription to cancel", 404);
-    const starterPlan = await queryDb(`SELECT id FROM subscription_plans WHERE slug='starter' LIMIT 1`);
-    if (current[0].plan_id === starterPlan[0]?.id) return respondError(res, "CANNOT_CANCEL_FREE", "Free plan cannot be cancelled", 400);
+    if (current[0].plan_slug === "starter") return respondError(res, "CANNOT_CANCEL_FREE", "Free plan cannot be cancelled", 400);
 
     if (immediately) {
       await queryDb(
-        `UPDATE subscriptions SET status='cancelled', cancelled_at=now(), cancel_at_period_end=false, updated_at=now() WHERE id=$1`,
+        `UPDATE subscriptions SET status='cancelled', cancelled_at=now(), cancel_at_period_end=false WHERE id=$1`,
         [current[0].id]
       );
-      // Downgrade to starter immediately
       await queryDb(
-        `INSERT INTO subscriptions (id, organization_id, plan_id, plan, status, billing_interval, current_period_start, current_period_end, created_at, updated_at)
-         VALUES (gen_random_uuid(), $1, (SELECT id FROM subscription_plans WHERE slug='starter' LIMIT 1), 'starter', 'active', 'free', now(), now() + INTERVAL '100 years', now(), now())`,
+        `INSERT INTO subscriptions (id, organization_id, plan_id, status, billing_interval, created_at)
+         VALUES (gen_random_uuid(), $1, (SELECT id FROM subscription_plans WHERE slug='starter' LIMIT 1), 'active', 'free', now())`,
         [organizationId]
       );
     } else {
       await queryDb(
-        `UPDATE subscriptions SET cancel_at_period_end=true, updated_at=now() WHERE id=$1`,
+        `UPDATE subscriptions SET cancel_at_period_end=true WHERE id=$1`,
         [current[0].id]
       );
     }
 
     invalidatePlanCache(organizationId);
-    await logSubscriptionEvent(organizationId, current[0].id, "cancelled", current[0].plan_id, immediately ? "starter" : null, res.locals.auth?.userId, { immediately });
+    await logSubscriptionEvent(organizationId, current[0].id, "cancelled", current[0].plan_slug, immediately ? "starter" : null, res.locals.auth?.userId, { immediately });
 
     return respondSuccess(res, {
       cancelled: true,
@@ -282,14 +253,16 @@ subscriptionsRoutes.post("/reactivate", requireRole("business_admin", "platform_
   try {
     const organizationId = getRequiredOrganizationId(res);
     const rows = await queryDb(
-      `UPDATE subscriptions SET cancel_at_period_end=false, cancelled_at=null, updated_at=now()
+      `UPDATE subscriptions SET cancel_at_period_end=false, cancelled_at=null
        WHERE organization_id=$1 AND cancel_at_period_end=true AND status='active'
-       RETURNING id::text, plan_id, status`,
+       RETURNING id::text, plan_id::text, status`,
       [organizationId]
     );
     if (!rows[0]) return respondError(res, "NOTHING_TO_REACTIVATE", "No pending cancellation found", 404);
     invalidatePlanCache(organizationId);
-    await logSubscriptionEvent(organizationId, rows[0].id, "reactivated", rows[0].plan_id, rows[0].plan_id, res.locals.auth?.userId);
+    const sp = await queryDb(`SELECT slug FROM subscription_plans WHERE id=$1`, [rows[0].plan_id]);
+    const slug = sp[0]?.slug ?? rows[0].plan_id;
+    await logSubscriptionEvent(organizationId, rows[0].id, "reactivated", slug, slug, res.locals.auth?.userId);
     return respondSuccess(res, rows[0]);
   } catch (err) { return next(err); }
 });
@@ -311,7 +284,7 @@ subscriptionsRoutes.get("/events", requireRole("business_admin", "platform_admin
 subscriptionsRoutes.get("/", requireRole("platform_admin"), async (req, res, next) => {
   try {
     const rows = await queryDb(
-      `SELECT s.id::text, s.organization_id::text, s.plan_id, s.status,
+      `SELECT s.id::text, s.organization_id::text, s.plan_id::text, s.status,
               s.billing_interval, s.current_period_start::text, s.current_period_end::text,
               s.cancel_at_period_end, s.created_at::text,
               sp.name AS plan_name, sp.price_monthly
@@ -323,7 +296,7 @@ subscriptionsRoutes.get("/", requireRole("platform_admin"), async (req, res, nex
   } catch (err) { return next(err); }
 });
 
-// ── Platform admin: get single subscription ───────────────────────────────────
+// ── Platform admin: get/update single subscription ───────────────────────────
 subscriptionsRoutes.get("/:id", requireRole("platform_admin"), async (req, res, next) => {
   try {
     const rows = await queryDb(
@@ -337,7 +310,6 @@ subscriptionsRoutes.get("/:id", requireRole("platform_admin"), async (req, res, 
   } catch (err) { return next(err); }
 });
 
-// ── Platform admin: update subscription ──────────────────────────────────────
 subscriptionsRoutes.patch("/:id", requireRole("platform_admin"), async (req, res, next) => {
   try {
     if (req.body?.status !== undefined) {
@@ -346,21 +318,22 @@ subscriptionsRoutes.patch("/:id", requireRole("platform_admin"), async (req, res
       const newStatus = String(req.body.status).trim();
       if (!isValidTransition(SUBSCRIPTION_TRANSITIONS, current[0].status as any, newStatus as any)) {
         const allowed = SUBSCRIPTION_TRANSITIONS[current[0].status as keyof typeof SUBSCRIPTION_TRANSITIONS] ?? [];
-        return respondError(res, "INVALID_TRANSITION",
-          `Cannot transition from '${current[0].status}' to '${newStatus}'`, 422, { allowed });
+        return respondError(res, "INVALID_TRANSITION", `Cannot transition from '${current[0].status}' to '${newStatus}'`, 422, { allowed });
       }
+    }
+    // Resolve slug → UUID if plan_id provided as slug
+    let planUuid: string | null = null;
+    if (req.body?.plan_id) {
+      const sp = await queryDb(`SELECT id FROM subscription_plans WHERE slug=$1 OR id::text=$1 LIMIT 1`, [req.body.plan_id]);
+      planUuid = sp[0]?.id ?? null;
     }
     const rows = await queryDb(
       `UPDATE subscriptions
          SET plan_id = COALESCE($2, plan_id),
-             plan    = COALESCE($2, plan),
-             status  = COALESCE($3, status),
-             updated_at = now()
+             status  = COALESCE($3, status)
        WHERE id=$1
-       RETURNING id::text, plan_id, status, updated_at::text`,
-      [req.params.id,
-       req.body?.plan_id ?? null,
-       req.body?.status ?? null]
+       RETURNING id::text, plan_id::text, status, created_at::text`,
+      [req.params.id, planUuid, req.body?.status ?? null]
     );
     if (!rows[0]) return respondError(res, "SUBSCRIPTION_NOT_FOUND", "Subscription not found", 404);
     return respondSuccess(res, rows[0]);

@@ -104,7 +104,6 @@ section("5. 402 — CRM still gated after starter activation");
 // ── 7. Seed 50 bookings to hit the limit ─────────────────────────────────────
 section("6. Seed 50 bookings this month (hit the limit)");
 {
-  // Need a client and service row for FK — use raw inserts
   await pool.query(`
     INSERT INTO clients (id, organization_id, full_name, email, created_at, updated_at)
     VALUES ('00000000-0000-0000-0000-000000000001', $1, 'Test Client', 'test@test.invalid', now(), now())
@@ -119,7 +118,7 @@ section("6. Seed 50 bookings this month (hit the limit)");
 
   // Seed 50 bookings directly — avoids needing staff/availability
   await pool.query(`
-    INSERT INTO bookings (id, organization_id, client_id, service_id, status, start_time, end_time, created_at, updated_at)
+    INSERT INTO bookings (id, organization_id, client_id, service_id, status, start_time, end_time, created_at)
     SELECT
       gen_random_uuid(),
       $1,
@@ -128,7 +127,6 @@ section("6. Seed 50 bookings this month (hit the limit)");
       'confirmed',
       now() - (n || ' hours')::interval,
       now() - (n || ' hours')::interval + interval '30 minutes',
-      now(),
       now()
     FROM generate_series(1, 50) AS n
   `, [TEST_ORG_ID]);
