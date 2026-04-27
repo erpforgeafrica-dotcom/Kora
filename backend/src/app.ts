@@ -193,7 +193,7 @@ export function createApp() {
   app.use("/api/clients", requireAuth, cacheMiddleware(300), invalidateCacheMiddleware(["/api/clients*"]), eventEmitterMiddleware(EventTypes.CLIENT_CREATED), clientsModuleRoutes);
   app.use("/api/staff", requireAuth, cacheMiddleware(300), invalidateCacheMiddleware(["/api/staff*"]), eventEmitterMiddleware(EventTypes.STAFF_CREATED), staffModuleRoutes);
   app.use("/api/services", requireAuth, cacheMiddleware(300), invalidateCacheMiddleware(["/api/services*"]), servicesRoutes);
-  app.use("/api/bookings", requireAuth, cacheMiddleware(180), invalidateCacheMiddleware(["/api/bookings*", "/api/clients*"]), eventEmitterMiddleware(EventTypes.BOOKING_CREATED), bookingsRoutes);
+  app.use("/api/bookings", requireAuth, checkUsageLimit("bookings"), cacheMiddleware(180), invalidateCacheMiddleware(["/api/bookings*", "/api/clients*"]), eventEmitterMiddleware(EventTypes.BOOKING_CREATED), bookingsRoutes);
   // NOTE: appointments/availability are intentionally not mounted in v1.2 canonicalization
   // until the availability subsystem is rebuilt against the enabled migration chain.
   app.use("/api/payments", requireAuth, cacheMiddleware(60), paymentsModuleRoutes);

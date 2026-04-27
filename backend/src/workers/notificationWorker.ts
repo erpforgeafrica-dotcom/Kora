@@ -1,7 +1,7 @@
 import { Worker, Job } from "bullmq";
-import { queueConnection, type NotificationJobData } from "../../queues/index.js";
-import { queryDb } from "../../db/client.js";
-import { logger } from "../../shared/logger.js";
+import { queueConnection, type NotificationJobData } from "../queues/index.js";
+import { queryDb } from "../db/client.js";
+import { logger } from "../shared/logger.js";
 
 /**
  * Notification Delivery Worker

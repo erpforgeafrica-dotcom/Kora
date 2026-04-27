@@ -40,12 +40,19 @@ export function requirePlan(minimumPlan: "basic" | "pro" | "business" | "enterpr
 
       const rows = await queryDb(
         `SELECT s.plan_id FROM subscriptions s
+         JOIN subscription_plans sp ON sp.id = s.plan_id
          WHERE s.organization_id = $1 AND s.status IN ('active','trialing')
          ORDER BY s.created_at DESC LIMIT 1`,
         [organizationId]
       ).catch(() => [] as any[]);
 
-      const currentPlanId = rows[0]?.plan_id ?? "starter";
+      const currentPlanSlug = rows[0]?.plan_id ?? "starter";
+      // plan_id column stores the UUID, but we need the slug for ordering
+      const slugRows = await queryDb(
+        `SELECT slug FROM subscription_plans WHERE id = $1`,
+        [currentPlanSlug]
+      ).catch(() => [] as any[]);
+      const currentPlanId = slugRows[0]?.slug ?? "starter";
       const currentLevel = PLAN_ORDER.indexOf(currentPlanId);
 
       // Store for downstream use (ai/routes.ts reads res.locals.auth.ai_plan)

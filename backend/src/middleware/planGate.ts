@@ -83,7 +83,7 @@ async function getOrgPlanFeatures(organizationId: string): Promise<PlanFeatures 
       `SELECT pf.*, sp.id AS plan_id, sp.name AS plan_name, sp.support_tier
        FROM plan_features pf
        JOIN subscription_plans sp ON sp.id = pf.plan_id
-       WHERE pf.plan_id = 'starter'`
+       WHERE sp.slug = 'starter'`
     ).catch(() => [] as any[]);
     if (!starterRows[0]) return null;
     const features = starterRows[0] as PlanFeatures;

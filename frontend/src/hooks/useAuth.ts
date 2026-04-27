@@ -1,5 +1,6 @@
-import { useState, useEffect, useCallback } from "react";
-import { useAuth as useClerkAuth, useOrganization, useUser } from "@clerk/clerk-react";
+import { useCallback, useEffect, useState } from "react";
+import { useAuth as useClerkAuth } from "@clerk/clerk-react";
+import { useOrganization, useUser } from "@clerk/shared/react";
 import { normalizeDashboardRole, type DashboardRole } from "../auth/dashboardAccess";
 
 export interface AuthState {
@@ -15,9 +16,9 @@ export interface AuthState {
 }
 
 /**
- * useAuth — Clerk-backed.
+ * useAuth — Clerk v5 backed.
  * Role: Clerk org membership role → publicMetadata.role → "client"
- * orgId: Clerk active organization — never from headers or localStorage alone
+ * orgId: Clerk active organization
  */
 export function useAuth(): AuthState & {
   setToken: (token: string) => Promise<void>;
@@ -25,14 +26,21 @@ export function useAuth(): AuthState & {
   logout: () => void;
   setError: (message: string | null) => void;
 } {
-  const { isLoaded: clerkLoaded, isSignedIn, getToken, signOut, sessionId } = useClerkAuth();
+  const clerkAuth = useClerkAuth();
   const { user, isLoaded: userLoaded } = useUser();
   const { organization, membership, isLoaded: orgLoaded } = useOrganization();
 
   const [token, setTokenState] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const isLoading = !clerkLoaded || !userLoaded || !orgLoaded;
+  // Clerk v5: isLoaded, isSignedIn, getToken, signOut are on useAuth()
+  const isLoaded = (clerkAuth as any).isLoaded ?? true;
+  const isSignedIn = (clerkAuth as any).isSignedIn ?? false;
+  const sessionId = (clerkAuth as any).sessionId ?? null;
+  const getToken: () => Promise<string | null> = clerkAuth.getToken;
+  const signOut: () => void = (clerkAuth as any).signOut ?? (() => {});
+
+  const isLoading = !isLoaded || !userLoaded || !orgLoaded;
 
   const resolveRole = useCallback((): DashboardRole | null => {
     if (!user) return null;
@@ -41,17 +49,15 @@ export function useAuth(): AuthState & {
     return normalizeDashboardRole(clerkOrgRole ?? metaRole ?? "client");
   }, [user, membership]);
 
-  // Refresh Clerk JWT whenever session changes
   useEffect(() => {
-    if (!clerkLoaded || !isSignedIn) { setTokenState(null); return; }
+    if (!isLoaded || !isSignedIn) { setTokenState(null); return; }
     getToken().then(t => {
       setTokenState(t);
       if (t) localStorage.setItem("kora_token", t);
       else localStorage.removeItem("kora_token");
     }).catch(() => setTokenState(null));
-  }, [clerkLoaded, isSignedIn, getToken, sessionId]);
+  }, [isLoaded, isSignedIn, getToken, sessionId]);
 
-  // Keep org ID in localStorage for axios interceptor
   useEffect(() => {
     if (organization?.id) localStorage.setItem("kora_org_id", organization.id);
   }, [organization?.id]);
@@ -65,7 +71,7 @@ export function useAuth(): AuthState & {
     organizationId: orgId,
     token,
     userId: user?.id ?? null,
-    sessionId: sessionId ?? null,
+    sessionId,
     userRole: resolveRole(),
     error,
     setToken: async (t: string) => { localStorage.setItem("kora_token", t); setTokenState(t); },

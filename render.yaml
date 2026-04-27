@@ -1,15 +1,11 @@
-databases:
-  - name: kora-postgres
-    databaseName: kora
-    user: kora
-    plan: free
-
 services:
+  # ── Redis (Render managed) ────────────────────────────────────────────────────
   - type: redis
     name: kora-redis
     plan: free
     ipAllowList: []
 
+  # ── Backend API ───────────────────────────────────────────────────────────────
   - type: web
     name: kora-backend
     runtime: node
@@ -30,9 +26,9 @@ services:
       - key: ENABLE_MOCK_PAYMENTS
         value: false
       - key: DB_POOL_MAX
-        value: 20
+        value: 10
       - key: DB_POOL_MIN
-        value: 5
+        value: 2
       - key: DB_IDLE_TIMEOUT
         value: 30000
       - key: DB_CONNECTION_TIMEOUT
@@ -41,32 +37,38 @@ services:
         value: 30000
       - key: DB_QUERY_TIMEOUT
         value: 30000
+      # ── Supabase (set in Render dashboard → Environment) ──────────────────────
+      # DATABASE_URL = postgresql://postgres.zihocnhvtgodnawnvoyj:KoraDB2024secure@aws-0-eu-west-1.pooler.supabase.com:6543/postgres
       - key: DATABASE_URL
-        fromDatabase:
-          name: kora-postgres
-          property: connectionString
+        sync: false
       - key: REDIS_URL
         fromService:
           type: redis
           name: kora-redis
           property: connectionString
+      # ── Secrets (set in Render dashboard → Environment) ───────────────────────
       - key: JWT_SECRET
         sync: false
       - key: SESSION_SECRET
         sync: false
       - key: CLERK_SECRET_KEY
         sync: false
-      - key: SENTRY_DSN
+      - key: CLERK_AUTHORIZED_PARTIES
+        sync: false
+      - key: CLERK_WEBHOOK_SECRET
         sync: false
       - key: STRIPE_SECRET_KEY
         sync: false
       - key: STRIPE_WEBHOOK_SECRET
         sync: false
-      - key: API_BASE_URL
+      - key: SENTRY_DSN
         sync: false
       - key: CORS_ORIGINS
         sync: false
+      - key: API_BASE_URL
+        sync: false
 
+  # ── Background Worker ─────────────────────────────────────────────────────────
   - type: worker
     name: kora-worker
     runtime: node
@@ -79,28 +81,8 @@ services:
         value: 20
       - key: NODE_ENV
         value: production
-      - key: LOG_LEVEL
-        value: info
-      - key: ENABLE_DEMO_MODE
-        value: false
-      - key: ENABLE_MOCK_PAYMENTS
-        value: false
-      - key: DB_POOL_MAX
-        value: 20
-      - key: DB_POOL_MIN
-        value: 5
-      - key: DB_IDLE_TIMEOUT
-        value: 30000
-      - key: DB_CONNECTION_TIMEOUT
-        value: 5000
-      - key: DB_STATEMENT_TIMEOUT
-        value: 30000
-      - key: DB_QUERY_TIMEOUT
-        value: 30000
       - key: DATABASE_URL
-        fromDatabase:
-          name: kora-postgres
-          property: connectionString
+        sync: false
       - key: REDIS_URL
         fromService:
           type: redis
@@ -112,17 +94,10 @@ services:
         sync: false
       - key: CLERK_SECRET_KEY
         sync: false
-      - key: SENTRY_DSN
-        sync: false
       - key: STRIPE_SECRET_KEY
         sync: false
-      - key: STRIPE_WEBHOOK_SECRET
-        sync: false
-      - key: API_BASE_URL
-        sync: false
-      - key: CORS_ORIGINS
-        sync: false
 
+  # ── Frontend (static site) ────────────────────────────────────────────────────
   - type: web
     name: kora-frontend
     runtime: static
@@ -139,5 +114,5 @@ services:
         value: 20
       - key: VITE_API_BASE_URL
         sync: false
-      - key: VITE_ORG_ID
+      - key: VITE_CLERK_PUBLISHABLE_KEY
         sync: false

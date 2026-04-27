@@ -21,9 +21,14 @@ ALTER TABLE users ADD COLUMN IF NOT EXISTS branch_id UUID;
 -- Performance indexes for common queries
 CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
 CREATE INDEX IF NOT EXISTS idx_users_organization_status ON users(organization_id, status);
-CREATE INDEX IF NOT EXISTS idx_users_role_id ON users(role_id);
 CREATE INDEX IF NOT EXISTS idx_users_branch_id ON users(branch_id);
 CREATE INDEX IF NOT EXISTS idx_users_status_created ON users(status, created_at DESC);
+-- role_id index only if column exists
+DO $$ BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='role_id') THEN
+    EXECUTE 'CREATE INDEX IF NOT EXISTS idx_users_role_id ON users(role_id)';
+  END IF;
+END $$;
 
 -- Composite indexes for filtering operations
 CREATE INDEX IF NOT EXISTS idx_users_org_email ON users(organization_id, email);

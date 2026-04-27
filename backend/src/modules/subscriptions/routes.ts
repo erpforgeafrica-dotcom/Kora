@@ -70,7 +70,7 @@ subscriptionsRoutes.get("/current", requireRole("business_admin", "platform_admi
       const starter = await queryDb(
         `SELECT sp.*, pf.* FROM subscription_plans sp
          JOIN plan_features pf ON pf.plan_id = sp.id
-         WHERE sp.id = 'starter'`
+         WHERE sp.slug = 'starter'`
       );
       return respondSuccess(res, {
         plan_id: "starter",
@@ -126,7 +126,9 @@ subscriptionsRoutes.post("/activate-free", requireRole("business_admin", "platfo
          id, organization_id, plan_id, plan, status, billing_interval,
          current_period_start, current_period_end, created_at, updated_at
        ) VALUES (
-         gen_random_uuid(), $1, 'starter', 'starter', 'active', 'free',
+         gen_random_uuid(), $1,
+         (SELECT id FROM subscription_plans WHERE slug='starter' LIMIT 1),
+         'starter', 'active', 'free',
          now(), now() + INTERVAL '100 years', now(), now()
        ) RETURNING id::text, plan_id, status, billing_interval, current_period_start::text`,
       [organizationId]
@@ -155,8 +157,8 @@ subscriptionsRoutes.post("/change-plan", requireRole("business_admin", "platform
       return respondError(res, "INVALID_PLAN", "Invalid plan. Must be: starter, growth, professional, enterprise", 400);
     }
 
-    // Verify plan exists
-    const plan = await queryDb(`SELECT * FROM subscription_plans WHERE id=$1 AND is_active=true`, [newPlanId]);
+    // Verify plan exists (newPlanId is a slug, not a UUID)
+    const plan = await queryDb(`SELECT * FROM subscription_plans WHERE slug=$1 AND is_active=true`, [newPlanId]);
     if (!plan[0]) return respondError(res, "PLAN_NOT_FOUND", "Plan not found", 404);
 
     // Get current subscription
@@ -172,15 +174,17 @@ subscriptionsRoutes.post("/change-plan", requireRole("business_admin", "platform
       // Downgrade to free — immediate
       if (current[0]) {
         await queryDb(
-          `UPDATE subscriptions SET plan_id='starter', plan='starter', billing_interval='free',
-           status='active', cancel_at_period_end=false, updated_at=now()
+          `UPDATE subscriptions
+           SET plan_id=(SELECT id FROM subscription_plans WHERE slug='starter' LIMIT 1),
+               plan='starter', billing_interval='free',
+               status='active', cancel_at_period_end=false, updated_at=now()
            WHERE id=$1`,
           [current[0].id]
         );
       } else {
         await queryDb(
           `INSERT INTO subscriptions (id, organization_id, plan_id, plan, status, billing_interval, current_period_start, current_period_end, created_at, updated_at)
-           VALUES (gen_random_uuid(), $1, 'starter', 'starter', 'active', 'free', now(), now() + INTERVAL '100 years', now(), now())`,
+           VALUES (gen_random_uuid(), $1, (SELECT id FROM subscription_plans WHERE slug='starter' LIMIT 1), 'starter', 'active', 'free', now(), now() + INTERVAL '100 years', now(), now())`,
           [organizationId]
         );
       }
@@ -226,7 +230,8 @@ subscriptionsRoutes.post("/cancel", requireRole("business_admin", "platform_admi
       [organizationId]
     );
     if (!current[0]) return respondError(res, "NO_ACTIVE_SUBSCRIPTION", "No active subscription to cancel", 404);
-    if (current[0].plan_id === "starter") return respondError(res, "CANNOT_CANCEL_FREE", "Free plan cannot be cancelled", 400);
+    const starterPlan = await queryDb(`SELECT id FROM subscription_plans WHERE slug='starter' LIMIT 1`);
+    if (current[0].plan_id === starterPlan[0]?.id) return respondError(res, "CANNOT_CANCEL_FREE", "Free plan cannot be cancelled", 400);
 
     if (immediately) {
       await queryDb(
@@ -236,7 +241,7 @@ subscriptionsRoutes.post("/cancel", requireRole("business_admin", "platform_admi
       // Downgrade to starter immediately
       await queryDb(
         `INSERT INTO subscriptions (id, organization_id, plan_id, plan, status, billing_interval, current_period_start, current_period_end, created_at, updated_at)
-         VALUES (gen_random_uuid(), $1, 'starter', 'starter', 'active', 'free', now(), now() + INTERVAL '100 years', now(), now())`,
+         VALUES (gen_random_uuid(), $1, (SELECT id FROM subscription_plans WHERE slug='starter' LIMIT 1), 'starter', 'active', 'free', now(), now() + INTERVAL '100 years', now(), now())`,
         [organizationId]
       );
     } else {

@@ -1,0 +1,47 @@
+# docker-compose.dev.yml
+# Starts ONLY Redis + Postgres for local development.
+# Run backend and frontend natively with npm run dev.
+#
+# Usage:
+#   docker compose -f docker-compose.dev.yml up -d
+#   cd backend && npm run dev
+#   cd frontend && npm run dev
+
+version: '3.8'
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg15
+    container_name: kora-postgres
+    environment:
+      POSTGRES_USER: kora
+      POSTGRES_PASSWORD: kora_dev_password
+      POSTGRES_DB: kora
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U kora"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: kora-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  redis_data:
