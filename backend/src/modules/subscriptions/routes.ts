@@ -123,26 +123,40 @@ subscriptionsRoutes.post("/activate-free", requireRole("business_admin", "platfo
 
     const row = await queryDb(
       `INSERT INTO subscriptions (
-         id, organization_id, plan_id, plan, status, billing_interval,
-         current_period_start, current_period_end, created_at, updated_at
+         id, organization_id, client_id, service_id, status, created_at
        ) VALUES (
          gen_random_uuid(), $1,
-         (SELECT id FROM subscription_plans WHERE slug='starter' LIMIT 1),
-         'starter', 'active', 'free',
-         now(), now() + INTERVAL '100 years', now(), now()
-       ) RETURNING id::text, plan_id, status, billing_interval, current_period_start::text`,
+         '00000000-0000-0000-0000-000000000000',
+         '00000000-0000-0000-0000-000000000000',
+         'active', now()
+       ) RETURNING id::text, status, created_at::text`,
       [organizationId]
+    );
+    
+    // Link the subscription to the plan
+    await queryDb(
+      `UPDATE subscriptions 
+       SET plan_id = (SELECT id FROM subscription_plans WHERE slug='starter' LIMIT 1),
+           billing_interval = 'monthly'
+       WHERE id = $1`,
+      [row[0].id]
+    );
+    
+    const finalRow = await queryDb(
+      `SELECT id::text, plan_id, status, billing_interval, created_at::text 
+       FROM subscriptions WHERE id = $1`,
+      [row[0].id]
     );
 
     await queryDb(
       `INSERT INTO subscription_events (organization_id, subscription_id, event_type, to_plan, actor_id)
        VALUES ($1, $2, 'created', 'starter', $3)`,
-      [organizationId, row[0].id, res.locals.auth?.userId ?? null]
+      [organizationId, finalRow[0].id, res.locals.auth?.userId ?? null]
     ).catch(() => {});
 
     invalidatePlanCache(organizationId);
     logger.info("Starter plan activated", { organizationId });
-    return respondSuccess(res, row[0], 201);
+    return respondSuccess(res, finalRow[0], 201);
   } catch (err) { return next(err); }
 });
 
