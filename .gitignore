@@ -18,6 +18,12 @@ backend/.tmp/
 backend/.npm-cache/
 backend/test_output.txt
 
+# IDE
+.vscode/
+.idea/
+.roo/
+.roomodes
+
 # Playwright
 /test-results/
 /playwright-report/
