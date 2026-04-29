@@ -142,15 +142,6 @@ export async function validateSessionCSRF(req: Request, res: Response, next: Nex
     return res.status(403).json({ error: "Invalid session" });
   }
 
-  // Constant-time comparison
-  const match = crypto
-    .createHmac("sha256", sessionToken)
-    .update(providedToken)
-    .digest() === crypto
-    .createHmac("sha256", sessionToken)
-    .update(sessionToken)
-    .digest();
-
   if (providedToken !== sessionToken) {
     logger.warn("CSRF token mismatch", { 
       path: req.path, 
@@ -162,5 +153,3 @@ export async function validateSessionCSRF(req: Request, res: Response, next: Nex
 
   next();
 }
-
-import crypto from "node:crypto";
