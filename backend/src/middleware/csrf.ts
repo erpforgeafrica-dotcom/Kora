@@ -10,88 +10,71 @@ interface CSRFRequest extends Request {
 }
 
 // Redis client for CSRF token storage (DB 2)
-const redisOptions = process.env.REDIS_URL 
+const redisOptions = process.env.REDIS_URL
   ? { maxRetriesPerRequest: 3 }
   : {
       host: process.env.REDIS_HOST || "localhost",
       port: parseInt(process.env.REDIS_PORT || "6379"),
       password: process.env.REDIS_PASSWORD,
-      db: 2, // Use DB 2 for CSRF (0 = BullMQ, 1 = cache)
+      db: 2,
       maxRetriesPerRequest: 3,
     };
-const redisCsrf = process.env.REDIS_URL 
-  ? new Redis(process.env.REDIS_URL, redisOptions) 
+const redisCsrf = process.env.REDIS_URL
+  ? new Redis(process.env.REDIS_URL, redisOptions)
   : new Redis(redisOptions);
 
 redisCsrf.on("error", (err: Error) => {
-  logger.error("Redis CSRF error", { 
-    message: err.message,
-    stack: err.stack,
-  });
+  logger.error("Redis CSRF error", { message: err.message });
 });
 
-// Fallback in-memory store for test environments without Redis
+// Fallback in-memory store for environments without Redis
 const csrfTokenMemory = new Map<string, { token: string; expires: number }>();
 
-/**
- * Get CSRF token storage helper
- */
-async function getCSRFToken(sessionId: string): Promise<string | null> {
+// ── Internal Redis helpers (prefixed to avoid name collision) ─────────────────
+
+async function redisGetCSRF(sessionId: string): Promise<string | null> {
   try {
     return await redisCsrf.get(`csrf:${sessionId}`);
-  } catch (err) {
-    logger.warn("Redis CSRF get failed, falling back to memory", { sessionId, error: String(err) });
+  } catch {
     const data = csrfTokenMemory.get(sessionId);
     return data && data.expires > Date.now() ? data.token : null;
   }
 }
 
-/**
- * Set CSRF token storage helper
- */
-async function setCSRFToken(sessionId: string, token: string, ttlSeconds: number): Promise<void> {
+async function redisSetCSRF(sessionId: string, token: string, ttlSeconds: number): Promise<void> {
   try {
     await redisCsrf.setex(`csrf:${sessionId}`, ttlSeconds, token);
-  } catch (err) {
-    logger.warn("Redis CSRF set failed, falling back to memory", { sessionId, error: String(err) });
+  } catch {
     csrfTokenMemory.set(sessionId, { token, expires: Date.now() + ttlSeconds * 1000 });
   }
 }
 
-/**
- * Delete CSRF token storage helper
- */
-async function deleteCSRFToken(sessionId: string): Promise<void> {
+async function redisDeleteCSRF(sessionId: string): Promise<void> {
   try {
     await redisCsrf.del(`csrf:${sessionId}`);
-  } catch (err) {
-    logger.warn("Redis CSRF delete failed, falling back to memory", { sessionId, error: String(err) });
+  } catch {
     csrfTokenMemory.delete(sessionId);
   }
 }
 
-/**
- * Generate CSRF token for session (Redis-backed)
- */
+// ── Public API ────────────────────────────────────────────────────────────────
+
 export async function generateCSRFToken(sessionId: string): Promise<string> {
   const token = crypto.randomBytes(32).toString("hex");
-  const ttlSeconds = 60 * 60; // 1 hour
-  await setCSRFToken(sessionId, token, ttlSeconds);
+  await redisSetCSRF(sessionId, token, 60 * 60);
   return token;
 }
 
-/**
- * Middleware to provide CSRF token (Redis-backed)
- */
 export function csrfToken(req: CSRFRequest, res: Response, next: NextFunction) {
-  const sessionId = (req as any).sessionID || req.headers["x-session-id"] as string || crypto.randomBytes(16).toString("hex");
-  
+  const sessionId =
+    (req as any).sessionID ||
+    (req.headers["x-session-id"] as string) ||
+    crypto.randomBytes(16).toString("hex");
+
   (async () => {
     try {
-      let token = await getCSRFToken(sessionId);
-      if (!token) {
-        token = await generateCSRFToken(sessionId);
-      }
+      let token = await redisGetCSRF(sessionId);
+      if (!token) token = await generateCSRFToken(sessionId);
       req.csrfToken = token;
       res.locals.sessionId = sessionId;
       next();
@@ -102,32 +85,22 @@ export function csrfToken(req: CSRFRequest, res: Response, next: NextFunction) {
   })();
 }
 
-/**
- * Middleware to validate CSRF token on state-changing requests (Redis-backed)
- */
 export function validateCSRF(req: Request, res: Response, next: NextFunction) {
-  if (process.env.NODE_ENV === "test" || process.env.VITEST === "true") {
-    return next();
-  }
+  if (process.env.NODE_ENV === "test" || process.env.VITEST === "true") return next();
+  if (["GET", "HEAD", "OPTIONS"].includes(req.method)) return next();
+  if (req.path.includes("/webhook")) return next();
+  if (
+    req.path.startsWith("/api/auth/login") ||
+    req.path.startsWith("/api/auth/register") ||
+    req.path.startsWith("/api/auth/logout")
+  ) return next();
 
-  // Skip CSRF for GET, HEAD, OPTIONS
-  if (["GET", "HEAD", "OPTIONS"].includes(req.method)) {
-    return next();
-  }
+  const sessionId =
+    res.locals.sessionId ||
+    (req as any).sessionID ||
+    (req.headers["x-session-id"] as string);
+  const providedToken = (req.headers["x-csrf-token"] as string) || req.body?._csrf;
 
-  // Skip CSRF for webhook endpoints
-  if (req.path.includes("/webhook")) {
-    return next();
-  }
-
-  // Skip CSRF for auth endpoints (no session established yet)
-  if (req.path.startsWith("/api/auth/login") || req.path.startsWith("/api/auth/register") || req.path.startsWith("/api/auth/logout")) {
-    return next();
-  }
-
-  const sessionId = res.locals.sessionId || (req as any).sessionID || req.headers["x-session-id"] as string;
-  const providedToken = req.headers["x-csrf-token"] as string || req.body._csrf;
-  
   if (!providedToken) {
     logger.warn("CSRF token missing", { path: req.path, method: req.method, ip: req.ip });
     return respondForbidden(res, "CSRF token required");
@@ -135,12 +108,9 @@ export function validateCSRF(req: Request, res: Response, next: NextFunction) {
 
   (async () => {
     try {
-      if (!sessionId) {
-        logger.warn("CSRF session not found", { path: req.path });
-        return respondForbidden(res, "Invalid CSRF session");
-      }
+      if (!sessionId) return respondForbidden(res, "Invalid CSRF session");
 
-      const storedToken = await getCSRFToken(sessionId);
+      const storedToken = await redisGetCSRF(sessionId);
       if (!storedToken) {
         logger.warn("CSRF session expired or not found", { sessionId, path: req.path });
         return respondForbidden(res, "Invalid CSRF session");
@@ -159,12 +129,13 @@ export function validateCSRF(req: Request, res: Response, next: NextFunction) {
   })();
 }
 
-/**
- * Endpoint to get CSRF token
- */
-export function getCSRFToken(req: CSRFRequest, res: Response) {
-  const sessionId = (req as any).sessionID || req.headers["x-session-id"] as string || "anonymous";
-  const token = generateCSRFToken(sessionId);
-  
+// ── Endpoint handler ──────────────────────────────────────────────────────────
+
+export async function getCSRFToken(req: CSRFRequest, res: Response) {
+  const sessionId =
+    (req as any).sessionID ||
+    (req.headers["x-session-id"] as string) ||
+    "anonymous";
+  const token = await generateCSRFToken(sessionId);
   return respondSuccess(res, { csrfToken: token });
 }
