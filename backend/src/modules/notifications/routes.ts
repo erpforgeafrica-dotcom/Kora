@@ -32,10 +32,7 @@ notificationsRoutes.get("/channels", async (_req, res, next) => {
 
 notificationsRoutes.post("/dispatch", async (req, res, next) => {
   try {
-    const organizationId = res.locals.auth.organizationId ?? req.header("x-org-id");
-    if (!organizationId) {
-      return respondError(res, "MISSING_ORGANIZATION_ID", "Missing organization id", 400);
-    }
+    const organizationId = getRequiredOrganizationId(res);
 
     const channel = req.body?.channel;
     if (!isChannel(channel)) {

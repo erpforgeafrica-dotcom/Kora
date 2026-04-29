@@ -3,6 +3,7 @@ import { enqueueReportGeneration } from "../../queues/index.js";
 import { getReportingSummary } from "../../db/repositories/analyticsRepository.js";
 import { respondSuccess, respondError } from "../../shared/response.js";
 import { authorize } from "../../middleware/rbac.js";
+import { getRequiredOrganizationId } from "../../shared/http.js";
 
 export const reportingRoutes = Router();
 const reportTypes = ["daily", "weekly", "monthly"] as const;
@@ -27,10 +28,7 @@ function isValidCron(expr: string): boolean {
 
 reportingRoutes.get("/summary", async (req, res, next) => {
   try {
-    const organizationId = res.locals.auth.organizationId ?? req.header("x-org-id");
-    if (!organizationId) {
-      return respondError(res, "MISSING_ORGANIZATION_ID", "Missing organization id", 400);
-    }
+    const organizationId = getRequiredOrganizationId(res);
 
     const summary = await getReportingSummary(organizationId);
     return respondSuccess(res, {
@@ -44,10 +42,7 @@ reportingRoutes.get("/summary", async (req, res, next) => {
 
 reportingRoutes.post("/generate", async (req, res, next) => {
   try {
-    const organizationId = res.locals.auth.organizationId ?? req.header("x-org-id");
-    if (!organizationId) {
-      return respondError(res, "MISSING_ORGANIZATION_ID", "Missing organization id", 400);
-    }
+    const organizationId = getRequiredOrganizationId(res);
 
     const reportType = toReportType(req.body?.reportType);
     const job = await enqueueReportGeneration({
@@ -68,10 +63,7 @@ reportingRoutes.post("/generate", async (req, res, next) => {
 
 reportingRoutes.post("/definitions", authorize("business_admin", "platform_admin"), async (req, res, next) => {
   try {
-    const organizationId = res.locals.auth?.organizationId ?? req.header("x-org-id");
-    if (!organizationId) {
-      return respondError(res, "MISSING_ORGANIZATION_ID", "Missing organization id", 400);
-    }
+    const organizationId = getRequiredOrganizationId(res);
 
     const { type, name, schedule } = req.body ?? {};
     if (!type || !name) {
@@ -93,7 +85,7 @@ reportingRoutes.post("/definitions", authorize("business_admin", "platform_admin
 
 reportingRoutes.get("/definitions", authorize("business_admin", "platform_admin"), async (req, res, next) => {
   try {
-    const organizationId = res.locals.auth?.organizationId ?? req.header("x-org-id");
+    const organizationId = getRequiredOrganizationId(res);
     const typeFilter = typeof req.query.type === "string" ? req.query.type : null;
 
     let defs = Array.from(reportDefinitions.values()).filter(
@@ -109,10 +101,7 @@ reportingRoutes.get("/definitions", authorize("business_admin", "platform_admin"
 
 reportingRoutes.post("/execute", authorize("business_admin", "platform_admin"), async (req, res, next) => {
   try {
-    const organizationId = res.locals.auth?.organizationId ?? req.header("x-org-id");
-    if (!organizationId) {
-      return respondError(res, "MISSING_ORGANIZATION_ID", "Missing organization id", 400);
-    }
+    const organizationId = getRequiredOrganizationId(res);
 
     const { report_id } = req.body ?? {};
     if (!report_id) {
