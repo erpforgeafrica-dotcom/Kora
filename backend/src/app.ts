@@ -69,6 +69,7 @@ import { gdprRoutes } from "./modules/gdpr/routes.js";
 import { clerkWebhookRoutes } from "./modules/webhooks/clerkRoutes.js";
 import { stripeWebhookRoutes } from "./modules/webhooks/stripeRoutes.js";
 import { requireFeature, checkUsageLimit } from "./middleware/planGate.js";
+import { sessionMiddleware } from "./middleware/session.js";
 
 const requireAuth = auth.requireAuth;
 const optionalAuth = auth.optionalAuth;
@@ -146,8 +147,9 @@ export function createApp() {
   app.use(apiLimiter);
   app.use(createOrgRateLimiter(60));
 
-  // Auth middleware
+  // Auth middleware — Clerk JWT (primary) + cookie session (enrichment, no-op if no cookies)
   app.use(optionalAuth);
+  app.use(sessionMiddleware);
 
   // CSRF protection
   app.use(csrfToken);
