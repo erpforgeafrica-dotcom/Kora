@@ -5,7 +5,7 @@ import { normalizeErrorResponse, normalizeLoginResponse, renderSafeString } from
 import { getDefaultDashboardPath, normalizeDashboardRole } from "../auth/dashboardAccess";
 
 export default function LoginPage() {
-  const { setToken, isLoading, userRole, isAuthenticated } = useAuthContext();
+  const { setToken, setOrgId, isLoading, userRole, isAuthenticated } = useAuthContext();
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -49,7 +49,16 @@ export default function LoginPage() {
 
       const login = normalizeLoginResponse(json);
       await setToken(login.accessToken);
+      if (login.user.organizationId) {
+        setOrgId(login.user.organizationId);
+      }
       const returnedRole = normalizeDashboardRole(login.user.role ?? null);
+      if (returnedRole) {
+        localStorage.setItem("kora_user_role", returnedRole);
+      }
+      if (login.user.email) {
+        localStorage.setItem("kora_user_email", login.user.email);
+      }
       navigate(returnedRole ? getDefaultDashboardPath(returnedRole) : "/app", { replace: true });
     } catch {
       setError("Unable to reach the server. Is the backend running?");

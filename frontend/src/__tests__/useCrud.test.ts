@@ -108,4 +108,23 @@ describe('useCrud Hook', () => {
       expect(result.current.data).toBe(null);
     });
   });
+
+  it('should normalize object-shaped API errors into safe strings', async () => {
+    server.use(
+      http.get('/api/clients', () => {
+        return HttpResponse.json(
+          { error: { code: 'BOOKINGS_UNAVAILABLE', message: 'Bookings are unavailable right now' } },
+          { status: 503 }
+        );
+      })
+    );
+
+    const { result } = renderHook(() => useCrud('/api/clients'));
+
+    await waitFor(() => {
+      expect(result.current.loading).toBe(false);
+      expect(result.current.error).toBe('Bookings are unavailable right now');
+      expect(typeof result.current.error).toBe('string');
+    });
+  });
 });

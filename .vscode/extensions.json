@@ -18,6 +18,11 @@
         "openai.chatgpt",
         "blackboxapp.blackboxagent",
         "wassimdev.wassimdev-vscode-deepseek",
-        "my-o.copilot-profile-manager"
+        "my-o.copilot-profile-manager",
+        "asadbinimtiaz.kiro-vscode-extension",
+        "meteorstudio.cursorcode",
+        "ktiays.aicursor",
+        "mercurial.warp-bridge",
+        "caffeinecat.warp-terminal"
     ]
 }

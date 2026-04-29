@@ -1,6 +1,11 @@
 import type { NextFunction, Request, Response } from "express";
-import { verifyToken } from "@clerk/backend";
+import { verifyToken as verifyClerkJwt } from "@clerk/backend";
 import { respondError } from "../shared/response.js";
+import {
+  verifyToken as verifyLocalJwt,
+  validateUserSession,
+  getUserById,
+} from "../modules/auth/service.js";
 
 /**
  * KORA Auth Middleware — Clerk-backed
@@ -107,7 +112,7 @@ async function verifyClerkToken(token: string): Promise<{
   userId: string; orgId: string; role: Role; sessionId: string;
 } | null> {
   try {
-    const payload = await verifyToken(token, {
+    const payload = await verifyClerkJwt(token, {
       secretKey: process.env.CLERK_SECRET_KEY!,
       authorizedParties: process.env.CLERK_AUTHORIZED_PARTIES
         ? process.env.CLERK_AUTHORIZED_PARTIES.split(",").map(s => s.trim())
@@ -128,6 +133,40 @@ async function verifyClerkToken(token: string): Promise<{
   }
 }
 
+async function verifyLocalToken(token: string): Promise<{
+  userId: string; orgId: string; role: Role; sessionId: string | null; tokenJti: string;
+} | null> {
+  try {
+    const payload = verifyLocalJwt(token) as {
+      sub?: string;
+      role?: string;
+      organizationId?: string;
+      jti?: string;
+    } | null;
+
+    const userId = payload?.sub ?? null;
+    const orgId = payload?.organizationId ?? null;
+    const tokenJti = payload?.jti ?? null;
+    if (!userId || !orgId || !tokenJti) {
+      return null;
+    }
+
+    const session = await validateUserSession(tokenJti);
+    const user = await getUserById(userId);
+    const role = normalizeRole(user?.role ?? payload?.role ?? "client");
+
+    return {
+      userId,
+      orgId,
+      role,
+      sessionId: session?.id ?? null,
+      tokenJti,
+    };
+  } catch {
+    return null;
+  }
+}
+
 // ─── requireAuth ──────────────────────────────────────────────────────────────
 export const requireAuth = async (req: Request, res: Response, next: NextFunction) => {
   if (injectTestAuth(req, res)) return next();
@@ -135,13 +174,13 @@ export const requireAuth = async (req: Request, res: Response, next: NextFunctio
   const token = extractBearerToken(req);
   if (!token) return respondError(res, "UNAUTHORIZED", "Missing or invalid authorization token", 401);
 
-  const verified = await verifyClerkToken(token);
+  const verified = await verifyClerkToken(token) ?? await verifyLocalToken(token);
   if (!verified) return respondError(res, "UNAUTHORIZED", "Token verification failed", 401);
 
   req.user = { id: verified.userId, role: verified.role, organization_id: verified.orgId };
   res.locals.auth = {
     userId: verified.userId, userRole: verified.role,
-    organizationId: verified.orgId, tokenJti: null, sessionId: verified.sessionId,
+    organizationId: verified.orgId, tokenJti: "tokenJti" in verified ? verified.tokenJti : null, sessionId: verified.sessionId,
   };
   return next();
 };
@@ -153,12 +192,12 @@ export const optionalAuth = async (req: Request, res: Response, next: NextFuncti
   const token = extractBearerToken(req);
   if (!token) return next();
 
-  const verified = await verifyClerkToken(token);
+  const verified = await verifyClerkToken(token) ?? await verifyLocalToken(token);
   if (verified) {
     req.user = { id: verified.userId, role: verified.role, organization_id: verified.orgId };
     res.locals.auth = {
       userId: verified.userId, userRole: verified.role,
-      organizationId: verified.orgId, tokenJti: null, sessionId: verified.sessionId,
+      organizationId: verified.orgId, tokenJti: "tokenJti" in verified ? verified.tokenJti : null, sessionId: verified.sessionId,
     };
   }
   return next();

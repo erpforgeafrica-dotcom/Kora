@@ -2,6 +2,7 @@
 // Generic CRUD hook using axios + Zustand-like state management
 import { useState, useEffect, useCallback } from "react";
 import api from "../services/api";
+import { getApiErrorMessage } from "../services/api";
 
 export interface CrudState<T> {
   data: T[] | null;
@@ -72,11 +73,7 @@ export function useCrud<T extends { id: string }>(basePath: string): CrudState<T
         (Array.isArray(responseData) ? responseData : []);
       setData(dataArray);
     } catch (err: any) {
-      const message = 
-        err.response?.data?.error || 
-        err.response?.data?.message ||
-        err.message || 
-        "Failed to load data";
+      const message = getApiErrorMessage(err, "Failed to load data");
       setError(message);
     } finally {
       setLoading(false);
@@ -97,7 +94,7 @@ export function useCrud<T extends { id: string }>(basePath: string): CrudState<T
         
         return newItem;
       } catch (err: any) {
-        const message = err.response?.data?.error || err.message || "Failed to create";
+        const message = getApiErrorMessage(err, "Failed to create");
         setError(message);
         throw err;
       } finally {
@@ -120,7 +117,7 @@ export function useCrud<T extends { id: string }>(basePath: string): CrudState<T
         
         return updated;
       } catch (err: any) {
-        const message = err.response?.data?.error || err.message || "Failed to update";
+        const message = getApiErrorMessage(err, "Failed to update");
         setError(message);
         throw err;
       } finally {
@@ -139,7 +136,7 @@ export function useCrud<T extends { id: string }>(basePath: string): CrudState<T
         await fetchAll();
         setError(null);
       } catch (err: any) {
-        const message = err.response?.data?.error || err.message || "Failed to delete";
+        const message = getApiErrorMessage(err, "Failed to delete");
         setError(message);
         throw err;
       } finally {

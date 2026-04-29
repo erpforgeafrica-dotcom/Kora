@@ -2,8 +2,7 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter } from "react-router-dom";
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const { ClerkProvider } = require("@clerk/clerk-react") as any;
+import * as ClerkReact from "@clerk/clerk-react";
 import App from "@/App";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
@@ -18,6 +17,10 @@ declare global {
     __koraShowBootFallback?: () => void;
   }
 }
+
+const { ClerkProvider } = ClerkReact as unknown as {
+  ClerkProvider: React.ComponentType<{ publishableKey: string; afterSignOutUrl?: string; children?: React.ReactNode }>;
+};
 
 if (typeof window !== "undefined") {
   window.__koraBootReady = true;
