@@ -95,7 +95,8 @@ export function useAuth(): AuthState & {
   const getToken: () => Promise<string | null> = clerkAuth?.getToken ?? (async () => getStoredValue("kora_token"));
   const signOut: () => void = clerkAuth?.signOut ?? (() => {});
 
-  const isLoading = !isLoaded || !userLoaded || !orgLoaded;
+  const hasLocalToken = !!token;
+  const isLoading = isSignedIn ? (!isLoaded || !userLoaded || !orgLoaded) : false;
 
   const resolveRole = useCallback((): DashboardRole | null => {
     const storedRole = normalizeDashboardRole(getStoredValue("kora_user_role"));
@@ -129,7 +130,7 @@ export function useAuth(): AuthState & {
   const userRole = resolveRole();
 
   return {
-    isAuthenticated: !!token,
+    isAuthenticated: isSignedIn || hasLocalToken,
     isLoading,
     orgId,
     organizationId: orgId,
