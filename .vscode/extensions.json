@@ -23,6 +23,7 @@
         "meteorstudio.cursorcode",
         "ktiays.aicursor",
         "mercurial.warp-bridge",
-        "caffeinecat.warp-terminal"
+        "caffeinecat.warp-terminal",
+        "codeium.codeium"
     ]
 }
