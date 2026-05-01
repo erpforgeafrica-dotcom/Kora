@@ -72,7 +72,7 @@ class ThreatStreamConsumer {
           "STREAMS",
           this.streamKey,
           "0"
-        );
+        ) as [string, [string, string[]][]][] | null;
 
         if (pending && pending.length > 0) {
           await this.processBatch(pending[0][1]);
@@ -90,7 +90,7 @@ class ThreatStreamConsumer {
           "STREAMS",
           this.streamKey,
           ">"
-        );
+        ) as [string, [string, string[]][]][] | null;
 
         if (messages && messages.length > 0) {
           await this.processBatch(messages[0][1]);
@@ -186,16 +186,16 @@ class ThreatStreamConsumer {
 
     try {
       // Get stream info
-      const info = await this.redis.xinfo("STREAM", this.streamKey);
-      const groupInfo = await this.redis.xinfo("GROUPS", this.streamKey);
+      const info = await this.redis.xinfo("STREAM", this.streamKey) as unknown[];
+      const groupInfo = await this.redis.xinfo("GROUPS", this.streamKey) as unknown[];
 
       return {
         stream: {
-          length: info[1],
-          firstEntry: info[3],
-          lastEntry: info[5],
+          length: (info as any)[1],
+          firstEntry: (info as any)[3],
+          lastEntry: (info as any)[5],
         },
-        group: groupInfo[0],
+        group: (groupInfo as any)[0],
         consumerName: this.consumerName,
         isRunning: this.isRunning,
       };
@@ -214,15 +214,8 @@ class ThreatStreamConsumer {
     if (!this.redis) return;
 
     const channel = `threat:${threatType}`;
-    this.redis.subscribe(channel, (err: Error | null, count: number | null) => {
-      if (err) {
-        logger.error("Error subscribing to channel", {
-          channel,
-          error: err.message,
-        });
-      } else {
-        logger.debug("Subscribed to channel", { channel, count });
-      }
+    this.redis.subscribe(channel).catch((err: Error) => {
+      logger.error("Error subscribing to channel", { channel, err: err.message });
     });
 
     this.redis.on("message", (channel: string, message: string) => {

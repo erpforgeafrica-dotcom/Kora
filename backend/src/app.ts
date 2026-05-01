@@ -70,6 +70,7 @@ import { clerkWebhookRoutes } from "./modules/webhooks/clerkRoutes.js";
 import { stripeWebhookRoutes } from "./modules/webhooks/stripeRoutes.js";
 import { requireFeature, checkUsageLimit } from "./middleware/planGate.js";
 import { sessionMiddleware } from "./middleware/session.js";
+import { initializeThreatDetection } from "./services/threatDetection/init.js";
 
 const requireAuth = auth.requireAuth;
 const optionalAuth = auth.optionalAuth;
@@ -78,6 +79,11 @@ const resolveOrganizationContext = rbacResolveOrgContext;
 export function createApp() {
   const app = express();
   const currentDir = path.dirname(fileURLToPath(import.meta.url));
+
+  // Initialize threat detection system
+  initializeThreatDetection(app).catch(err => {
+    logger.error('Threat detection initialization failed', { error: err.message });
+  });
 
   // Security headers — production-hardened
   app.use(helmet({

@@ -158,7 +158,9 @@ CREATE INDEX idx_login_failures_attempt_timestamp ON login_failures(attempt_time
 CREATE INDEX idx_login_failures_created_at ON login_failures(created_at);
 
 -- Cleanup old failures (for efficient querying)
-CREATE INDEX idx_login_failures_recent ON login_failures(attempt_timestamp DESC) WHERE attempt_timestamp > NOW() - INTERVAL '15 minutes';
+-- Note: Partial index removed due to NOW() immutability constraint
+-- Use regular index and filter in queries instead
+CREATE INDEX idx_login_failures_recent ON login_failures(attempt_timestamp DESC);
 
 -- ===== THREAT DETECTOR REGISTRY =====
 -- Track which detectors are enabled and their configurations
@@ -230,18 +232,6 @@ ALTER TABLE audit_logs ADD COLUMN IF NOT EXISTS flagged_for_review BOOLEAN DEFAU
 
 CREATE INDEX idx_audit_logs_threat_signal_id ON audit_logs(threat_signal_id);
 CREATE INDEX idx_audit_logs_flagged_for_review ON audit_logs(flagged_for_review);
-
--- ===== PERMISSIONS FOR SECURITY TEAM =====
--- Grant security team read access to threat tables
-GRANT SELECT ON threat_events TO "authenticated_user";
-GRANT SELECT ON threat_signals TO "authenticated_user";
-GRANT SELECT ON ip_reputation TO "authenticated_user";
-GRANT SELECT ON user_anomalies TO "authenticated_user";
-GRANT SELECT ON threat_detectors TO "authenticated_user";
-GRANT SELECT ON security_incidents TO "authenticated_user";
-
--- Allow security admins to update incidents
-GRANT UPDATE ON security_incidents TO "authenticated_user";
 
 -- ===== PARTITIONING FOR SCALABILITY =====
 -- Partition threat_events by organization for better query performance

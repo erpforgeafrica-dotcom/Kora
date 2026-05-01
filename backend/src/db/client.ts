@@ -13,6 +13,9 @@ export const dbPool = new Pool({
   statement_timeout: config.DB_STATEMENT_TIMEOUT,
   query_timeout: config.DB_STATEMENT_TIMEOUT,
   allowExitOnIdle: false,
+  ssl: connectionString?.includes('supabase.com') ? {
+    rejectUnauthorized: false
+  } : false,
 });
 
 // Pool event handlers for monitoring

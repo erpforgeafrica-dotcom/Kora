@@ -9,7 +9,6 @@ import { Redis } from "ioredis";
 import { EventEmitter } from "events";
 import { queryDb } from "../../db/client.js";
 import { logger } from "../../shared/logger.js";
-import { getRedisClient } from "../../shared/redis.js";
 
 export interface ThreatEvent {
   id?: string;
@@ -51,7 +50,7 @@ export class ThreatDetectionEngine extends EventEmitter {
 
   constructor() {
     super();
-    this.redis = getRedisClient();
+    this.redis = new Redis(process.env.REDIS_URL || "redis://localhost:6379", { maxRetriesPerRequest: null });
   }
 
   /**
@@ -101,7 +100,7 @@ export class ThreatDetectionEngine extends EventEmitter {
 
       logger.info(`Loaded ${this.detectors.size} threat detectors`);
     } catch (err) {
-      logger.error("Failed to load detector registry", err);
+      logger.error("Failed to load detector registry", { err: String(err) });
     }
   }
 
@@ -154,7 +153,7 @@ export class ThreatDetectionEngine extends EventEmitter {
 
       return eventId;
     } catch (err) {
-      logger.error("Failed to ingest event", err);
+      logger.error("Failed to ingest event", { err: String(err) });
       throw err;
     }
   }
@@ -175,7 +174,7 @@ export class ThreatDetectionEngine extends EventEmitter {
               if (signal) signals.push(signal);
             })
             .catch((err) => {
-              logger.error(`Detector ${detector.name} failed`, err);
+              logger.error(`Detector ${detector.name} failed`, { err: String(err) });
             })
         );
 
@@ -186,7 +185,7 @@ export class ThreatDetectionEngine extends EventEmitter {
         await this.aggregateSignals(signals, eventId, event);
       }
     } catch (err) {
-      logger.error("Failed to process event", err);
+      logger.error("Failed to process event", { err: String(err) });
     }
   }
 
@@ -233,7 +232,7 @@ export class ThreatDetectionEngine extends EventEmitter {
 
       return signal;
     } catch (err) {
-      logger.error(`Detector ${detector.name} error`, err);
+      logger.error(`Detector ${detector.name} error`, { err: String(err) });
       return null;
     }
   }
@@ -542,7 +541,7 @@ export class ThreatDetectionEngine extends EventEmitter {
         await this.respondToSignal(signal, signalId, event);
       }
     } catch (err) {
-      logger.error("Failed to aggregate signals", err);
+      logger.error("Failed to aggregate signals", { err: String(err) });
     }
   }
 
@@ -582,7 +581,7 @@ export class ThreatDetectionEngine extends EventEmitter {
         [responseAction, signalId]
       );
     } catch (err) {
-      logger.error("Failed to respond to signal", err);
+      logger.error("Failed to respond to signal", { err: String(err) });
     }
   }
 
@@ -599,7 +598,7 @@ export class ThreatDetectionEngine extends EventEmitter {
 
       logger.warn("User session revoked", { userId, signalId });
     } catch (err) {
-      logger.error("Failed to revoke session", err);
+      logger.error("Failed to revoke session", { err: String(err) });
     }
   }
 
@@ -622,7 +621,7 @@ export class ThreatDetectionEngine extends EventEmitter {
 
       logger.warn("IP blocked", { ipAddress, signalId });
     } catch (err) {
-      logger.error("Failed to block IP", err);
+      logger.error("Failed to block IP", { err: String(err) });
     }
   }
 
@@ -642,14 +641,14 @@ export class ThreatDetectionEngine extends EventEmitter {
     // Cleanup old threat events every hour
     setInterval(() => {
       queryDb(`DELETE FROM threat_events WHERE created_at < NOW() - INTERVAL '30 days'`).catch(
-        (err) => logger.error("Failed to cleanup old events", err)
+        (err) => logger.error("Failed to cleanup old events", { err: String(err) })
       );
     }, 3600000);
 
     // Update user anomaly baselines every 6 hours
     setInterval(() => {
       this.updateAnomalyBaselines().catch((err) => {
-        logger.error("Failed to update anomaly baselines", err);
+        logger.error("Failed to update anomaly baselines", { err: String(err) });
       });
     }, 6 * 3600000);
   }
@@ -671,7 +670,7 @@ export class ThreatDetectionEngine extends EventEmitter {
         WHERE ua.user_id = u.id
       `);
     } catch (err) {
-      logger.error("Failed to update baselines", err);
+      logger.error("Failed to update baselines", { err: String(err) });
     }
   }
 
@@ -687,15 +686,15 @@ export class ThreatDetectionEngine extends EventEmitter {
       case "brute_force":
         return (e) => e.eventType === "login_failed";
       case "impossible_travel":
-        return (e) => e.userId && e.ipAddress;
+        return (e) => !!(e.userId && e.ipAddress);
       case "data_exfiltration":
-        return (e) => e.source === "database" && e.metadata.rowsReturned;
+        return (e) => e.source === "database" && !!e.metadata.rowsReturned;
       case "privilege_escalation":
-        return (e) => e.metadata.userRole && e.metadata.attemptedAction;
+        return (e) => !!(e.metadata.userRole && e.metadata.attemptedAction);
       case "token_anomaly":
-        return (e) => e.metadata.anomalies;
+        return (e) => !!e.metadata.anomalies;
       case "rate_limit":
-        return (e) => e.ipAddress;
+        return (e) => !!e.ipAddress;
       default:
         return () => false;
     }
@@ -723,7 +722,7 @@ export class ThreatDetectionEngine extends EventEmitter {
       const result = await queryDb(query, params);
       return parseInt(result[0]?.count || "0");
     } catch (err) {
-      logger.error("Failed to get threat count", err);
+      logger.error("Failed to get threat count", { err: String(err) });
       return 0;
     }
   }
@@ -745,7 +744,7 @@ export class ThreatDetectionEngine extends EventEmitter {
 
       return rows as any;
     } catch (err) {
-      logger.error("Failed to query threats", err);
+      logger.error("Failed to query threats", { err: String(err) });
       return [];
     }
   }

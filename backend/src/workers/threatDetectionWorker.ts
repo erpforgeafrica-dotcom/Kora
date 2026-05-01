@@ -1,10 +1,14 @@
 import { Worker } from "bullmq";
-import { Redis } from "ioredis";
 import { logger } from "../shared/logger.js";
 import { getThreatEngine } from "../services/threatDetection/threatEngine.js";
 import { queryDb } from "../db/client.js";
 
-const redisConnection = new Redis(process.env.REDIS_URL || "redis://localhost:6379", { maxRetriesPerRequest: null });
+const redisConnectionOpts = {
+  host: process.env.REDIS_HOST || "localhost",
+  port: parseInt(process.env.REDIS_PORT || "6379"),
+  password: process.env.REDIS_PASSWORD,
+  maxRetriesPerRequest: null as null,
+};
 
 /**
  * Threat Detection Event Processing Worker
@@ -21,7 +25,7 @@ class ThreatDetectionWorker {
     logger.info("Initializing Threat Detection Worker");
 
     this.worker = new Worker("threatEvents", this.processEvent.bind(this), {
-      connection: redisConnection,
+      connection: redisConnectionOpts,
       concurrency: 10,
       maxStalledCount: 2,
       stalledInterval: 5000,
