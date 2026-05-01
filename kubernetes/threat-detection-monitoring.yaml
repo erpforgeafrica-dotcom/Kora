@@ -1,0 +1,220 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: threat-detection-prometheus-alerts
+  namespace: threat-detection
+data:
+  threat-alerts.yaml: |
+    groups:
+      - name: threat_detection
+        interval: 30s
+        rules:
+          # Critical threats detected
+          - alert: CriticalThreatsDetected
+            expr: threat_signals_active{severity="CRITICAL"} > 0
+            for: 1m
+            labels:
+              severity: critical
+              component: threat-detection
+            annotations:
+              summary: "Critical threats detected"
+              description: "{{ $value }} critical threats are currently active"
+          
+          # High threat spike
+          - alert: ThreatSpike
+            expr: rate(threat_signals_total[5m]) > 10
+            for: 5m
+            labels:
+              severity: high
+              component: threat-detection
+            annotations:
+              summary: "Threat spike detected"
+              description: "Threat detection rate is {{ $value }} per second"
+          
+          # Brute force attack detected
+          - alert: BruteForceAttackDetected
+            expr: threat_detector_brute_force_detections_total > 5
+            for: 1m
+            labels:
+              severity: high
+              component: threat-detection
+            annotations:
+              summary: "Brute force attack detected"
+              description: "{{ $value }} brute force attempts detected in 1 minute"
+          
+          # Cross-org access attempt
+          - alert: CrossOrgAccessAttempt
+            expr: threat_detector_cross_org_access_detections_total > 0
+            for: 1m
+            labels:
+              severity: critical
+              component: threat-detection
+            annotations:
+              summary: "Cross-organization access attempt"
+              description: "{{ $value }} cross-org access attempts detected"
+          
+          # High false positive rate
+          - alert: HighFalsePositiveRate
+            expr: (threat_signals_false_positives_total / threat_signals_total) > 0.1
+            for: 10m
+            labels:
+              severity: warning
+              component: threat-detection
+            annotations:
+              summary: "High false positive rate"
+              description: "False positive rate is {{ $value | humanizePercentage }}"
+          
+          # Detector unhealthy
+          - alert: DetectorUnhealthy
+            expr: threat_detector_status{healthy="false"} > 0
+            for: 5m
+            labels:
+              severity: warning
+              component: threat-detection
+            annotations:
+              summary: "Detector unhealthy: {{ $labels.detector_name }}"
+              description: "Detector {{ $labels.detector_name }} is unhealthy"
+          
+          # Event processing lag
+          - alert: EventProcessingLag
+            expr: threat_event_processing_lag_seconds > 5
+            for: 5m
+            labels:
+              severity: warning
+              component: threat-detection
+            annotations:
+              summary: "Event processing lag detected"
+              description: "Events are lagging by {{ $value | humanizeDuration }}"
+
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: threat-detection-monitor
+  namespace: threat-detection
+  labels:
+    app: threat-detection-engine
+spec:
+  selector:
+    matchLabels:
+      app: threat-detection-engine
+  endpoints:
+    - port: metrics
+      interval: 30s
+      path: /metrics
+      scheme: http
+      scrapeTimeout: 10s
+
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: threat-detection-rules
+  namespace: threat-detection
+  labels:
+    prometheus: kora
+spec:
+  groups:
+    - name: threat_detection.rules
+      interval: 30s
+      rules:
+        # Recording rules for common queries
+        - record: threat:signals:rate5m
+          expr: rate(threat_signals_total[5m])
+        
+        - record: threat:signals:severity
+          expr: threat_signals_active by (severity)
+        
+        - record: threat:detector:accuracy
+          expr: (threat_detector_detections_total - threat_detector_false_positives_total) / threat_detector_detections_total
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: threat-detection-grafana-dashboard
+  namespace: threat-detection
+data:
+  dashboard.json: |
+    {
+      "dashboard": {
+        "title": "Threat Detection System",
+        "panels": [
+          {
+            "title": "Active Threats",
+            "targets": [
+              {
+                "expr": "threat_signals_active"
+              }
+            ],
+            "type": "stat"
+          },
+          {
+            "title": "Threat Rate (5m)",
+            "targets": [
+              {
+                "expr": "rate(threat_signals_total[5m])"
+              }
+            ],
+            "type": "graph"
+          },
+          {
+            "title": "By Severity",
+            "targets": [
+              {
+                "expr": "threat_signals_active by (severity)"
+              }
+            ],
+            "type": "piechart"
+          },
+          {
+            "title": "Detector Performance",
+            "targets": [
+              {
+                "expr": "threat_detector_accuracy by (detector_name)"
+              }
+            ],
+            "type": "table"
+          }
+        ]
+      }
+    }
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: threat-detection-ingress-rules
+  namespace: threat-detection
+data:
+  nginx.conf: |
+    upstream threat_detection {
+      server threat-detection-service:80;
+    }
+    
+    server {
+      listen 80;
+      server_name security.kora.local;
+      
+      # Security headers
+      add_header X-Frame-Options "SAMEORIGIN" always;
+      add_header X-Content-Type-Options "nosniff" always;
+      add_header X-XSS-Protection "1; mode=block" always;
+      add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+      
+      # Rate limiting
+      limit_req_zone $binary_remote_addr zone=api:10m rate=100r/m;
+      limit_req zone=api burst=10 nodelay;
+      
+      location / {
+        proxy_pass http://threat_detection;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_connect_timeout 30s;
+        proxy_send_timeout 30s;
+        proxy_read_timeout 30s;
+      }
+    }

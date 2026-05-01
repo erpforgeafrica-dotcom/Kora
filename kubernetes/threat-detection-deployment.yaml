@@ -1,0 +1,245 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: threat-detection
+  labels:
+    name: threat-detection
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: threat-detection-config
+  namespace: threat-detection
+data:
+  THREAT_DETECTION_ENABLED: "true"
+  THREAT_EVENT_RETENTION_DAYS: "30"
+  THREAT_AUTO_RESPONSE_ENABLED: "true"
+  THREAT_DETECTOR_SQL_INJECTION_THRESHOLD: "85"
+  THREAT_DETECTOR_BRUTE_FORCE_THRESHOLD: "70"
+  THREAT_DETECTOR_CROSS_ORG_THRESHOLD: "90"
+  THREAT_DETECTION_EVENTS_PER_SECOND: "1000"
+  THREAT_DETECTION_SIGNALS_BUFFER_SIZE: "10000"
+  LOG_LEVEL: "info"
+  NODE_ENV: "production"
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: threat-detection-secrets
+  namespace: threat-detection
+type: Opaque
+stringData:
+  DATABASE_URL: "postgresql://user:password@postgres-service:5432/kora"
+  REDIS_URL: "redis://redis-service:6379/0"
+  JWT_SECRET: "your-jwt-secret-here"
+  CLERK_SECRET_KEY: "sk_live_xxx"
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: threat-detection-logs
+  namespace: threat-detection
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 50Gi
+  storageClassName: standard
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: threat-detection-engine
+  namespace: threat-detection
+  labels:
+    app: threat-detection-engine
+    version: v1
+spec:
+  replicas: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: threat-detection-engine
+  template:
+    metadata:
+      labels:
+        app: threat-detection-engine
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9090"
+        prometheus.io/path: "/metrics"
+    spec:
+      serviceAccountName: threat-detection-sa
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+      containers:
+        - name: threat-detection
+          image: kora/threat-detection:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 3000
+              protocol: TCP
+            - name: metrics
+              containerPort: 9090
+              protocol: TCP
+          env:
+            - name: NODE_ENV
+              valueFrom:
+                configMapKeyRef:
+                  name: threat-detection-config
+                  key: NODE_ENV
+            - name: THREAT_DETECTION_ENABLED
+              valueFrom:
+                configMapKeyRef:
+                  name: threat-detection-config
+                  key: THREAT_DETECTION_ENABLED
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: threat-detection-secrets
+                  key: DATABASE_URL
+            - name: REDIS_URL
+              valueFrom:
+                secretKeyRef:
+                  name: threat-detection-secrets
+                  key: REDIS_URL
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: threat-detection-secrets
+                  key: JWT_SECRET
+            - name: THREAT_EVENT_RETENTION_DAYS
+              valueFrom:
+                configMapKeyRef:
+                  name: threat-detection-config
+                  key: THREAT_EVENT_RETENTION_DAYS
+            - name: THREAT_AUTO_RESPONSE_ENABLED
+              valueFrom:
+                configMapKeyRef:
+                  name: threat-detection-config
+                  key: THREAT_AUTO_RESPONSE_ENABLED
+          resources:
+            requests:
+              cpu: 500m
+              memory: 512Mi
+            limits:
+              cpu: 2000m
+              memory: 2Gi
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 2
+          volumeMounts:
+            - name: logs
+              mountPath: /app/logs
+            - name: tmp
+              mountPath: /tmp
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+      volumes:
+        - name: logs
+          persistentVolumeClaim:
+            claimName: threat-detection-logs
+        - name: tmp
+          emptyDir: {}
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: app
+                      operator: In
+                      values:
+                        - threat-detection-engine
+                topologyKey: kubernetes.io/hostname
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: threat-detection-service
+  namespace: threat-detection
+  labels:
+    app: threat-detection-engine
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+      protocol: TCP
+    - name: metrics
+      port: 9090
+      targetPort: metrics
+      protocol: TCP
+  selector:
+    app: threat-detection-engine
+
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: threat-detection-hpa
+  namespace: threat-detection
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: threat-detection-engine
+  minReplicas: 3
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 80
+
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: threat-detection-pdb
+  namespace: threat-detection
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: threat-detection-engine
