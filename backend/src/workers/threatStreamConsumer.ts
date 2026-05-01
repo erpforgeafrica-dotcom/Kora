@@ -1,6 +1,6 @@
-import Redis from "ioredis";
-import { logger } from "../../shared/logger.js";
-import { queryDb } from "../../db/client.js";
+import { Redis } from "ioredis";
+import { logger } from "../shared/logger.js";
+import { queryDb } from "../db/client.js";
 
 /**
  * Threat Stream Consumer
@@ -214,7 +214,7 @@ class ThreatStreamConsumer {
     if (!this.redis) return;
 
     const channel = `threat:${threatType}`;
-    this.redis.subscribe(channel, (err, count) => {
+    this.redis.subscribe(channel, (err: Error | null, count: number | null) => {
       if (err) {
         logger.error("Error subscribing to channel", {
           channel,
@@ -225,7 +225,7 @@ class ThreatStreamConsumer {
       }
     });
 
-    this.redis.on("message", (channel, message) => {
+    this.redis.on("message", (channel: string, message: string) => {
       try {
         const data = JSON.parse(message);
         callback(data);

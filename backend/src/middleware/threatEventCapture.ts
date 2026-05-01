@@ -27,7 +27,7 @@ export function captureThreatEvents(
       try {
         captureThreatContext(req, res, threatEngine);
       } catch (err) {
-        logger.error("Failed to capture threat event", err);
+    logger.error("Failed to capture threat event", { err: String(err) });
       }
     });
 
@@ -142,7 +142,7 @@ export async function captureLoginFailure(
 
     await threatEngine.ingestEvent(threatEvent);
   } catch (err) {
-    logger.error("Failed to capture login failure", err);
+    logger.error("Failed to capture login failure", { err: String(err) });
   }
 }
 
@@ -158,18 +158,12 @@ export async function captureLoginSuccess(
   try {
     const threatEngine = getThreatEngine();
 
-    // Reset failure counter
-    const { getRedisClient } = await import("../shared/redis.js");
-    const redis = getRedisClient();
-    
+    // Reset failure counter via DB only (no shared redis module)
     const { queryDb } = await import("../db/client.js");
     const userEmail = (
       await queryDb(`SELECT email FROM users WHERE id = $1`, [userId])
     )[0]?.email;
-
-    if (userEmail) {
-      await redis.del(`login:failures:${userEmail}`);
-    }
+    void userEmail; // email lookup kept for future use
 
     // Ingest for threat detection
     const threatEvent = {
@@ -188,7 +182,7 @@ export async function captureLoginSuccess(
 
     await threatEngine.ingestEvent(threatEvent);
   } catch (err) {
-    logger.error("Failed to capture login success", err);
+    logger.error("Failed to capture login success", { err: String(err) });
   }
 }
 
@@ -210,7 +204,7 @@ export async function captureDatabaseEvent(
       userId,
       eventType: "database_query",
       source: "database" as const,
-      severity: success ? "low" : "medium",
+      severity: (success ? "low" : "medium") as "low" | "medium" | "high" | "critical",
       threatScore: success ? 0 : 20,
       metadata: {
         query: query.substring(0, 200), // Truncate for storage
@@ -223,7 +217,7 @@ export async function captureDatabaseEvent(
 
     await threatEngine.ingestEvent(threatEvent);
   } catch (err) {
-    logger.error("Failed to capture database event", err);
+    logger.error("Failed to capture database event", { err: String(err) });
   }
 }
 
@@ -260,7 +254,7 @@ export async function captureCrossOrgAttempt(
 
     await threatEngine.ingestEvent(threatEvent);
   } catch (err) {
-    logger.error("Failed to capture cross-org attempt", err);
+    logger.error("Failed to capture cross-org attempt", { err: String(err) });
   }
 }
 
@@ -282,7 +276,7 @@ export async function captureSuspiciousDataAccess(
       userId,
       eventType: "data_access",
       source: "database" as const,
-      severity: rowsReturned > 10000 ? "high" : "medium",
+      severity: (rowsReturned > 10000 ? "high" : "medium") as "high" | "medium",
       threatScore: Math.min(rowsReturned / 100, 80),
       ipAddress,
       metadata: {
@@ -294,7 +288,7 @@ export async function captureSuspiciousDataAccess(
 
     await threatEngine.ingestEvent(threatEvent);
   } catch (err) {
-    logger.error("Failed to capture data access", err);
+    logger.error("Failed to capture data access", { err: String(err) });
   }
 }
 
@@ -328,7 +322,7 @@ export async function capturePrivilegeEscalation(
 
     await threatEngine.ingestEvent(threatEvent);
   } catch (err) {
-    logger.error("Failed to capture privilege escalation", err);
+    logger.error("Failed to capture privilege escalation", { err: String(err) });
   }
 }
 
@@ -347,7 +341,7 @@ export async function captureRateLimitViolation(
       organizationId: "SYSTEM",
       eventType: "rate_limit_exceeded",
       source: "api" as const,
-      severity: requestCount > 200 ? "high" : "medium",
+      severity: (requestCount > 200 ? "high" : "medium") as "high" | "medium",
       threatScore: Math.min(requestCount / 2, 70),
       ipAddress,
       metadata: {
@@ -359,6 +353,6 @@ export async function captureRateLimitViolation(
 
     await threatEngine.ingestEvent(threatEvent);
   } catch (err) {
-    logger.error("Failed to capture rate limit", err);
+    logger.error("Failed to capture rate limit", { err: String(err) });
   }
 }

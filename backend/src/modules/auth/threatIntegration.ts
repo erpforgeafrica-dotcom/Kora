@@ -25,7 +25,7 @@ export async function onLoginFailure(
   try {
     await captureLoginFailure(email, organizationId || "SYSTEM", ipAddress, userAgent, reason);
   } catch (err) {
-    logger.error("Failed to capture login failure", err);
+    logger.error("Failed to capture login failure", { err: String(err) });
   }
 }
 
@@ -41,7 +41,7 @@ export async function onLoginSuccess(
   try {
     await captureLoginSuccess(userId, organizationId, ipAddress, userAgent);
   } catch (err) {
-    logger.error("Failed to capture login success", err);
+    logger.error("Failed to capture login success", { err: String(err) });
   }
 }
 
@@ -58,6 +58,6 @@ export async function onPrivilegeEscalationAttempt(
   try {
     await capturePrivilegeEscalation(userId, organizationId, userRole, attemptedAction, ipAddress);
   } catch (err) {
-    logger.error("Failed to capture privilege escalation", err);
+    logger.error("Failed to capture privilege escalation", { err: String(err) });
   }
 }

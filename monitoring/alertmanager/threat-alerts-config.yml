@@ -1,0 +1,108 @@
+global:
+  resolve_timeout: 5m
+  slack_api_url: "{{ env 'SLACK_WEBHOOK_URL' }}"
+  pagerduty_url: "https://events.pagerduty.com/v2/enqueue"
+
+templates:
+  - '/etc/alertmanager/templates/*.tmpl'
+
+route:
+  receiver: 'default'
+  group_by: ['alertname', 'cluster', 'service']
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 12h
+  routes:
+    # Critical security incidents
+    - match:
+        severity: critical
+        component: threat-detection
+      receiver: 'security-team-critical'
+      group_wait: 10s
+      repeat_interval: 4h
+      continue: true
+    
+    # High severity threats
+    - match:
+        severity: high
+        component: threat-detection
+      receiver: 'security-team-high'
+      group_wait: 1m
+      repeat_interval: 6h
+      continue: true
+    
+    # SLO violations
+    - match:
+        component: threat-detection
+        slo: 'detection_accuracy'
+      receiver: 'devops-team'
+      group_wait: 5m
+      repeat_interval: 24h
+      continue: true
+
+receivers:
+  - name: 'default'
+    slack_configs:
+      - channel: '#monitoring'
+        title: '{{ .GroupLabels.alertname }}'
+        text: '{{ range .Alerts }}{{ .Annotations.description }}{{ end }}'
+        send_resolved: true
+
+  - name: 'security-team-critical'
+    slack_configs:
+      - channel: '#security-alerts'
+        title: '🚨 CRITICAL: {{ .GroupLabels.alertname }}'
+        text: '{{ range .Alerts }}{{ .Annotations.description }}{{ end }}'
+        send_resolved: true
+        color: '{{ if eq .Status "firing" }}danger{{ else }}good{{ end }}'
+    
+    pagerduty_configs:
+      - routing_key: "{{ env 'PAGERDUTY_SECURITY_KEY' }}"
+        description: '{{ .GroupLabels.alertname }}'
+        details:
+          firing: '{{ range .Alerts.Firing }}{{ .Labels.instance }} {{ .Annotations.summary }}{{ end }}'
+
+  - name: 'security-team-high'
+    slack_configs:
+      - channel: '#security-alerts'
+        title: '⚠️ HIGH: {{ .GroupLabels.alertname }}'
+        text: '{{ range .Alerts }}{{ .Annotations.description }}{{ end }}'
+        send_resolved: true
+        color: 'warning'
+    
+    email_configs:
+      - to: 'security@kora.local'
+        from: 'alertmanager@kora.local'
+        smarthost: 'smtp.kora.local:587'
+        auth_username: 'alertmanager'
+        auth_password: '{{ env "SMTP_PASSWORD" }}'
+
+  - name: 'devops-team'
+    slack_configs:
+      - channel: '#devops-alerts'
+        title: 'ℹ️ INFO: {{ .GroupLabels.alertname }}'
+        text: '{{ range .Alerts }}{{ .Annotations.description }}{{ end }}'
+        send_resolved: true
+        color: 'good'
+
+inhibit_rules:
+  # Suppress high alerts if critical is firing
+  - source_match:
+      severity: 'critical'
+    target_match:
+      severity: 'high'
+    equal: ['alertname', 'dev', 'instance']
+
+  # Suppress warning if high is firing
+  - source_match:
+      severity: 'high'
+    target_match:
+      severity: 'warning'
+    equal: ['alertname', 'dev', 'instance']
+
+  # Suppress info if critical is firing
+  - source_match:
+      severity: 'critical'
+    target_match:
+      severity: 'info'
+    equal: ['alertname', 'dev', 'instance']

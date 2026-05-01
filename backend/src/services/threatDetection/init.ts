@@ -36,7 +36,7 @@ export async function initializeThreatDetection(app: Express): Promise<void> {
 
     logger.info("✓ Threat detection system initialized");
   } catch (err) {
-    logger.error("Failed to initialize threat detection", err);
+    logger.error("Failed to initialize threat detection", { err: String(err) });
     // Don't fail app startup - threat detection is optional
   }
 }
@@ -148,7 +148,7 @@ async function initializeDetectorRegistry(): Promise<void> {
 
     logger.info(`✓ Registered ${detectors.length} threat detectors`);
   } catch (err) {
-    logger.error("Failed to initialize detector registry", err);
+    logger.error("Failed to initialize detector registry", { err: String(err) });
   }
 }
 

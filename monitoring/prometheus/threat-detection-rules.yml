@@ -1,0 +1,252 @@
+groups:
+  - name: threat_detection_metrics
+    interval: 30s
+    rules:
+      # ==================== Recording Rules ====================
+      
+      # Threat signals by severity
+      - record: threat:signals:by_severity
+        expr: count(threat_signals_active) by (severity, organization_id)
+      
+      # Threat detection rate (per minute)
+      - record: threat:signals:rate_per_minute
+        expr: rate(threat_signals_total[1m])
+      
+      # Detector accuracy
+      - record: threat:detector:accuracy
+        expr: (threat_detector_detections_total - threat_detector_false_positives_total) / threat_detector_detections_total
+      
+      # Detector detection rate
+      - record: threat:detector:rate
+        expr: rate(threat_detector_detections_total[5m]) by (detector_name)
+      
+      # Average threat score
+      - record: threat:avg_score
+        expr: avg(threat_signals_active{}) by (signal_type)
+      
+      # Event processing latency percentiles
+      - record: threat:event_latency:p50
+        expr: histogram_quantile(0.50, rate(threat_event_processing_duration_seconds_bucket[5m]))
+      
+      - record: threat:event_latency:p95
+        expr: histogram_quantile(0.95, rate(threat_event_processing_duration_seconds_bucket[5m]))
+      
+      - record: threat:event_latency:p99
+        expr: histogram_quantile(0.99, rate(threat_event_processing_duration_seconds_bucket[5m]))
+      
+      # Failed login attempts
+      - record: threat:failed_logins:rate_per_hour
+        expr: rate(login_failures_total[1h])
+      
+      # IP reputation distribution
+      - record: threat:ip_reputation:blocked_count
+        expr: count(ip_reputation{blocked_until > now()})
+      
+      # ==================== Alert Rules ====================
+      
+      # CRITICAL: Critical threats detected
+      - alert: CriticalThreatsDetected
+        expr: threat_signals_active{severity="CRITICAL"} > 0
+        for: 1m
+        labels:
+          severity: critical
+          component: threat-detection
+        annotations:
+          summary: "{{ $value }} critical threats detected"
+          description: "Critical threats are currently active. Immediate investigation required."
+          runbook_url: "https://docs.kora.local/runbooks/critical_threats"
+      
+      # CRITICAL: Cross-org access attempt
+      - alert: CrossOrgAccessAttempt
+        expr: increase(threat_detector_cross_org_access_detections_total[5m]) > 0
+        for: 1m
+        labels:
+          severity: critical
+          component: threat-detection
+        annotations:
+          summary: "Cross-organization access attempt detected"
+          description: "User attempted to access resources from different organization"
+          runbook_url: "https://docs.kora.local/runbooks/cross_org_access"
+      
+      # HIGH: Brute force attack
+      - alert: BruteForceAttackDetected
+        expr: increase(threat_detector_brute_force_detections_total[5m]) >= 5
+        for: 2m
+        labels:
+          severity: high
+          component: threat-detection
+        annotations:
+          summary: "{{ $value }} brute force attempts detected"
+          description: "Multiple failed login attempts detected. Account may be under attack."
+          runbook_url: "https://docs.kora.local/runbooks/brute_force"
+      
+      # HIGH: Data exfiltration
+      - alert: DataExfiltratedDetected
+        expr: increase(threat_detector_data_exfiltration_detections_total[5m]) > 0
+        for: 1m
+        labels:
+          severity: high
+          component: threat-detection
+        annotations:
+          summary: "Potential data exfiltration detected"
+          description: "Large volume of data access detected"
+          runbook_url: "https://docs.kora.local/runbooks/data_exfiltration"
+      
+      # HIGH: Privilege escalation
+      - alert: PrivilegeEscalationAttempt
+        expr: increase(threat_detector_privilege_escalation_detections_total[5m]) > 0
+        for: 1m
+        labels:
+          severity: high
+          component: threat-detection
+        annotations:
+          summary: "Privilege escalation attempt detected"
+          description: "Non-admin user attempted to access admin endpoints"
+          runbook_url: "https://docs.kora.local/runbooks/privilege_escalation"
+      
+      # HIGH: Impossible travel
+      - alert: ImpossibleTravelDetected
+        expr: increase(threat_detector_impossible_travel_detections_total[5m]) > 0
+        for: 1m
+        labels:
+          severity: high
+          component: threat-detection
+        annotations:
+          summary: "Impossible travel detected"
+          description: "User login from geographically impossible location"
+          runbook_url: "https://docs.kora.local/runbooks/impossible_travel"
+      
+      # MEDIUM: Rate limit violation
+      - alert: RateLimitViolation
+        expr: increase(threat_detector_rate_limit_violations_total[5m]) > 10
+        for: 2m
+        labels:
+          severity: medium
+          component: threat-detection
+        annotations:
+          summary: "Rate limit violation detected"
+          description: "{{ $value }} rate limit violations in last 5 minutes"
+          runbook_url: "https://docs.kora.local/runbooks/rate_limit"
+      
+      # WARNING: High threat volume
+      - alert: HighThreatVolume
+        expr: rate(threat_signals_total[5m]) > 10
+        for: 10m
+        labels:
+          severity: warning
+          component: threat-detection
+        annotations:
+          summary: "Unusually high threat detection rate"
+          description: "{{ $value }} threat signals per second. Possible DDoS or security event."
+          runbook_url: "https://docs.kora.local/runbooks/high_threat_volume"
+      
+      # WARNING: High false positive rate
+      - alert: HighFalsePositiveRate
+        expr: (rate(threat_signals_false_positives_total[1h]) / rate(threat_signals_total[1h])) > 0.2
+        for: 15m
+        labels:
+          severity: warning
+          component: threat-detection
+        annotations:
+          summary: "High false positive rate (>20%)"
+          description: "Detector tuning may be needed"
+          runbook_url: "https://docs.kora.local/runbooks/false_positives"
+      
+      # WARNING: Event processing lag
+      - alert: EventProcessingLag
+        expr: threat_event_processing_lag_seconds > 5
+        for: 5m
+        labels:
+          severity: warning
+          component: threat-detection
+        annotations:
+          summary: "Event processing lag detected"
+          description: "Events lagging by {{ $value }}s. Consumer may need scaling."
+          runbook_url: "https://docs.kora.local/runbooks/processing_lag"
+      
+      # WARNING: Detector unhealthy
+      - alert: DetectorUnhealthy
+        expr: threat_detector_status{healthy="false"} > 0
+        for: 5m
+        labels:
+          severity: warning
+          component: threat-detection
+        annotations:
+          summary: "Detector unhealthy: {{ $labels.detector_name }}"
+          description: "Detector {{ $labels.detector_name }} is not responding"
+          runbook_url: "https://docs.kora.local/runbooks/detector_health"
+      
+      # WARNING: High database latency
+      - alert: DatabaseLatencyHigh
+        expr: threat_database_query_duration_seconds{percentile="p95"} > 1
+        for: 10m
+        labels:
+          severity: warning
+          component: threat-detection
+        annotations:
+          summary: "Database query latency high"
+          description: "95th percentile latency is {{ $value }}s"
+          runbook_url: "https://docs.kora.local/runbooks/db_latency"
+      
+      # WARNING: Redis memory high
+      - alert: RedisMemoryHigh
+        expr: redis_memory_used_bytes / redis_memory_max_bytes > 0.8
+        for: 5m
+        labels:
+          severity: warning
+          component: threat-detection
+        annotations:
+          summary: "Redis memory usage high (>80%)"
+          description: "Memory usage: {{ $value | humanizePercentage }}"
+          runbook_url: "https://docs.kora.local/runbooks/redis_memory"
+      
+      # INFO: Worker queue depth
+      - alert: WorkerQueueDeepAlert
+        expr: threat_worker_queue_depth > 1000
+        for: 5m
+        labels:
+          severity: info
+          component: threat-detection
+        annotations:
+          summary: "Worker queue depth is {{ $value }}"
+          description: "Consider scaling workers"
+          runbook_url: "https://docs.kora.local/runbooks/worker_scaling"
+
+  - name: threat_detection_slos
+    interval: 30s
+    rules:
+      # SLO: 99% of events processed within 1 second
+      - alert: EventProcessingLatencySLOViolation
+        expr: histogram_quantile(0.99, rate(threat_event_processing_duration_seconds_bucket[5m])) > 1
+        for: 5m
+        labels:
+          severity: warning
+          component: threat-detection
+          slo: "event_processing_latency"
+        annotations:
+          summary: "Event processing latency SLO violation"
+          description: "99th percentile latency exceeds 1 second"
+      
+      # SLO: 99.9% threat detection accuracy
+      - alert: ThreatDetectionAccuracySLOViolation
+        expr: (1 - (rate(threat_signals_false_positives_total[1h]) / rate(threat_signals_total[1h]))) < 0.999
+        for: 30m
+        labels:
+          severity: warning
+          component: threat-detection
+          slo: "detection_accuracy"
+        annotations:
+          summary: "Threat detection accuracy SLO violation"
+          description: "Accuracy below 99.9%"
+      
+      # SLO: 99.99% uptime
+      - alert: ThreatDetectionUptimeSLOViolation
+        expr: up{job="threat-detection"} == 0
+        for: 2m
+        labels:
+          severity: warning
+          component: threat-detection
+          slo: "availability"
+        annotations:
+          summary: "Threat detection service unavailable"
+          description: "Service is down"

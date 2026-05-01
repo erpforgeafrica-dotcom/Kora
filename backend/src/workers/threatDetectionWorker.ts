@@ -1,10 +1,10 @@
 import { Worker } from "bullmq";
-import Redis from "ioredis";
-import { logger } from "../../shared/logger.js";
-import { getThreatEngine } from "../../services/threatDetection/threatEngine.js";
-import { queryDb } from "../../db/client.js";
+import { Redis } from "ioredis";
+import { logger } from "../shared/logger.js";
+import { getThreatEngine } from "../services/threatDetection/threatEngine.js";
+import { queryDb } from "../db/client.js";
 
-const redisConnection = new Redis(process.env.REDIS_URL || "redis://localhost:6379");
+const redisConnection = new Redis(process.env.REDIS_URL || "redis://localhost:6379", { maxRetriesPerRequest: null });
 
 /**
  * Threat Detection Event Processing Worker
@@ -32,7 +32,6 @@ class ThreatDetectionWorker {
       logger.info(`✓ Threat event processed`, {
         jobId: job.id,
         eventType: job.data.eventType,
-        duration: job.progress(),
       });
     });
 

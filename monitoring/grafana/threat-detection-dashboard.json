@@ -1,0 +1,514 @@
+{
+    "dashboard": {
+        "title": "KORA Threat Detection System",
+        "description": "Real-time monitoring of threat detection engine and detectors",
+        "tags": [
+            "threat-detection",
+            "security",
+            "kora"
+        ],
+        "timezone": "browser",
+        "schemaVersion": 38,
+        "version": 1,
+        "refresh": "30s",
+        "time": {
+            "from": "now-1h",
+            "to": "now"
+        },
+        "panels": [
+            {
+                "id": 1,
+                "title": "Active Threats",
+                "type": "stat",
+                "gridPos": {
+                    "h": 4,
+                    "w": 6,
+                    "x": 0,
+                    "y": 0
+                },
+                "targets": [
+                    {
+                        "expr": "threat_signals_active",
+                        "legendFormat": "Active Threats",
+                        "refId": "A"
+                    }
+                ],
+                "fieldConfig": {
+                    "defaults": {
+                        "color": {
+                            "mode": "thresholds"
+                        },
+                        "thresholds": {
+                            "mode": "absolute",
+                            "steps": [
+                                {
+                                    "color": "green",
+                                    "value": null
+                                },
+                                {
+                                    "color": "yellow",
+                                    "value": 5
+                                },
+                                {
+                                    "color": "red",
+                                    "value": 10
+                                }
+                            ]
+                        }
+                    }
+                }
+            },
+            {
+                "id": 2,
+                "title": "Threats by Severity",
+                "type": "piechart",
+                "gridPos": {
+                    "h": 4,
+                    "w": 6,
+                    "x": 6,
+                    "y": 0
+                },
+                "targets": [
+                    {
+                        "expr": "sum(threat_signals_active) by (severity)",
+                        "legendFormat": "{{ severity }}",
+                        "refId": "A"
+                    }
+                ]
+            },
+            {
+                "id": 3,
+                "title": "Threat Detection Rate",
+                "type": "timeseries",
+                "gridPos": {
+                    "h": 8,
+                    "w": 12,
+                    "x": 0,
+                    "y": 4
+                },
+                "targets": [
+                    {
+                        "expr": "rate(threat_signals_total[5m])",
+                        "legendFormat": "Threats/sec",
+                        "refId": "A"
+                    }
+                ],
+                "fieldConfig": {
+                    "defaults": {
+                        "custom": {
+                            "lineWidth": 2
+                        }
+                    }
+                },
+                "options": {
+                    "legend": {
+                        "calcs": [
+                            "mean",
+                            "max"
+                        ],
+                        "placement": "bottom"
+                    }
+                }
+            },
+            {
+                "id": 4,
+                "title": "Detector Performance",
+                "type": "table",
+                "gridPos": {
+                    "h": 8,
+                    "w": 12,
+                    "x": 12,
+                    "y": 4
+                },
+                "targets": [
+                    {
+                        "expr": "threat:detector:accuracy",
+                        "format": "table",
+                        "instant": true,
+                        "refId": "A"
+                    }
+                ],
+                "transformations": [
+                    {
+                        "id": "organize",
+                        "options": {
+                            "excludeByName": {
+                                "Time": true,
+                                "__name__": true
+                            },
+                            "indexByName": {
+                                "detector_name": 0,
+                                "Value": 1
+                            },
+                            "renameByName": {
+                                "Value": "Accuracy"
+                            }
+                        }
+                    }
+                ]
+            },
+            {
+                "id": 5,
+                "title": "Failed Login Attempts (24h)",
+                "type": "stat",
+                "gridPos": {
+                    "h": 4,
+                    "w": 6,
+                    "x": 0,
+                    "y": 12
+                },
+                "targets": [
+                    {
+                        "expr": "increase(login_failures_total[24h])",
+                        "refId": "A"
+                    }
+                ],
+                "fieldConfig": {
+                    "defaults": {
+                        "color": {
+                            "mode": "thresholds"
+                        },
+                        "thresholds": {
+                            "mode": "absolute",
+                            "steps": [
+                                {
+                                    "color": "green",
+                                    "value": null
+                                },
+                                {
+                                    "color": "yellow",
+                                    "value": 100
+                                },
+                                {
+                                    "color": "red",
+                                    "value": 500
+                                }
+                            ]
+                        }
+                    }
+                }
+            },
+            {
+                "id": 6,
+                "title": "Cross-Org Access Attempts",
+                "type": "stat",
+                "gridPos": {
+                    "h": 4,
+                    "w": 6,
+                    "x": 6,
+                    "y": 12
+                },
+                "targets": [
+                    {
+                        "expr": "increase(threat_detector_cross_org_access_detections_total[24h])",
+                        "refId": "A"
+                    }
+                ],
+                "fieldConfig": {
+                    "defaults": {
+                        "color": {
+                            "mode": "thresholds"
+                        },
+                        "thresholds": {
+                            "mode": "absolute",
+                            "steps": [
+                                {
+                                    "color": "green",
+                                    "value": null
+                                },
+                                {
+                                    "color": "red",
+                                    "value": 1
+                                }
+                            ]
+                        }
+                    }
+                }
+            },
+            {
+                "id": 7,
+                "title": "Event Processing Latency",
+                "type": "timeseries",
+                "gridPos": {
+                    "h": 8,
+                    "w": 12,
+                    "x": 0,
+                    "y": 16
+                },
+                "targets": [
+                    {
+                        "expr": "threat:event_latency:p50",
+                        "legendFormat": "p50",
+                        "refId": "A"
+                    },
+                    {
+                        "expr": "threat:event_latency:p95",
+                        "legendFormat": "p95",
+                        "refId": "B"
+                    },
+                    {
+                        "expr": "threat:event_latency:p99",
+                        "legendFormat": "p99",
+                        "refId": "C"
+                    }
+                ],
+                "options": {
+                    "legend": {
+                        "calcs": [
+                            "mean",
+                            "max"
+                        ],
+                        "placement": "bottom"
+                    }
+                }
+            },
+            {
+                "id": 8,
+                "title": "False Positive Rate",
+                "type": "timeseries",
+                "gridPos": {
+                    "h": 8,
+                    "w": 12,
+                    "x": 12,
+                    "y": 16
+                },
+                "targets": [
+                    {
+                        "expr": "(rate(threat_signals_false_positives_total[1h]) / rate(threat_signals_total[1h])) * 100",
+                        "legendFormat": "FP Rate %",
+                        "refId": "A"
+                    }
+                ],
+                "fieldConfig": {
+                    "defaults": {
+                        "custom": {
+                            "lineWidth": 2
+                        }
+                    }
+                },
+                "options": {
+                    "legend": {
+                        "calcs": [
+                            "mean",
+                            "max"
+                        ],
+                        "placement": "bottom"
+                    }
+                }
+            },
+            {
+                "id": 9,
+                "title": "Detector Detection Rates",
+                "type": "timeseries",
+                "gridPos": {
+                    "h": 8,
+                    "w": 24,
+                    "x": 0,
+                    "y": 24
+                },
+                "targets": [
+                    {
+                        "expr": "threat:detector:rate",
+                        "legendFormat": "{{ detector_name }}",
+                        "refId": "A"
+                    }
+                ],
+                "options": {
+                    "legend": {
+                        "calcs": [
+                            "mean",
+                            "max"
+                        ],
+                        "placement": "bottom",
+                        "showLegend": true
+                    }
+                }
+            },
+            {
+                "id": 10,
+                "title": "IP Reputation: Blocked IPs",
+                "type": "stat",
+                "gridPos": {
+                    "h": 4,
+                    "w": 6,
+                    "x": 0,
+                    "y": 32
+                },
+                "targets": [
+                    {
+                        "expr": "threat:ip_reputation:blocked_count",
+                        "refId": "A"
+                    }
+                ],
+                "fieldConfig": {
+                    "defaults": {
+                        "color": {
+                            "mode": "thresholds"
+                        },
+                        "thresholds": {
+                            "mode": "absolute",
+                            "steps": [
+                                {
+                                    "color": "green",
+                                    "value": null
+                                },
+                                {
+                                    "color": "yellow",
+                                    "value": 10
+                                },
+                                {
+                                    "color": "red",
+                                    "value": 100
+                                }
+                            ]
+                        }
+                    }
+                }
+            },
+            {
+                "id": 11,
+                "title": "Worker Queue Depth",
+                "type": "stat",
+                "gridPos": {
+                    "h": 4,
+                    "w": 6,
+                    "x": 6,
+                    "y": 32
+                },
+                "targets": [
+                    {
+                        "expr": "threat_worker_queue_depth",
+                        "refId": "A"
+                    }
+                ],
+                "fieldConfig": {
+                    "defaults": {
+                        "color": {
+                            "mode": "thresholds"
+                        },
+                        "thresholds": {
+                            "mode": "absolute",
+                            "steps": [
+                                {
+                                    "color": "green",
+                                    "value": null
+                                },
+                                {
+                                    "color": "yellow",
+                                    "value": 500
+                                },
+                                {
+                                    "color": "red",
+                                    "value": 1000
+                                }
+                            ]
+                        }
+                    }
+                }
+            },
+            {
+                "id": 12,
+                "title": "Database Query Latency",
+                "type": "timeseries",
+                "gridPos": {
+                    "h": 8,
+                    "w": 12,
+                    "x": 0,
+                    "y": 36
+                },
+                "targets": [
+                    {
+                        "expr": "threat_database_query_duration_seconds{percentile='p50'}",
+                        "legendFormat": "p50",
+                        "refId": "A"
+                    },
+                    {
+                        "expr": "threat_database_query_duration_seconds{percentile='p95'}",
+                        "legendFormat": "p95",
+                        "refId": "B"
+                    },
+                    {
+                        "expr": "threat_database_query_duration_seconds{percentile='p99'}",
+                        "legendFormat": "p99",
+                        "refId": "C"
+                    }
+                ],
+                "options": {
+                    "legend": {
+                        "calcs": [
+                            "mean",
+                            "max"
+                        ],
+                        "placement": "bottom"
+                    }
+                }
+            },
+            {
+                "id": 13,
+                "title": "Redis Memory Usage",
+                "type": "gauge",
+                "gridPos": {
+                    "h": 8,
+                    "w": 12,
+                    "x": 12,
+                    "y": 36
+                },
+                "targets": [
+                    {
+                        "expr": "(redis_memory_used_bytes / redis_memory_max_bytes) * 100",
+                        "refId": "A"
+                    }
+                ],
+                "fieldConfig": {
+                    "defaults": {
+                        "color": {
+                            "mode": "thresholds"
+                        },
+                        "thresholds": {
+                            "mode": "percentage",
+                            "steps": [
+                                {
+                                    "color": "green",
+                                    "value": null
+                                },
+                                {
+                                    "color": "yellow",
+                                    "value": 70
+                                },
+                                {
+                                    "color": "red",
+                                    "value": 90
+                                }
+                            ]
+                        },
+                        "max": 100,
+                        "min": 0
+                    }
+                }
+            },
+            {
+                "id": 14,
+                "title": "Alert Status",
+                "type": "alertlist",
+                "gridPos": {
+                    "h": 8,
+                    "w": 24,
+                    "x": 0,
+                    "y": 44
+                },
+                "options": {
+                    "dashboardAlerts": false,
+                    "dashboardTitle": "",
+                    "maxItems": 10,
+                    "sortOrder": 3,
+                    "stateFilter": {
+                        "firing": true,
+                        "noData": false,
+                        "normal": false,
+                        "pending": true
+                    }
+                }
+            }
+        ]
+    }
+}

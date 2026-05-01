@@ -8,7 +8,7 @@
 import { Router, Request, Response } from "express";
 import { z } from "zod";
 import { requireAuth } from "../../middleware/auth.js";
-import { validateBody } from "../../middleware/validation.js";
+import { validateBody } from "../../middleware/validate.js";
 import { getThreatEngine } from "../../services/threatDetection/threatEngine.js";
 import { queryDb } from "../../db/client.js";
 import { logger } from "../../shared/logger.js";
