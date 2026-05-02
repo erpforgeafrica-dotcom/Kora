@@ -8,7 +8,7 @@
     "dev:worker": "tsx watch src/workers.ts",
     "build": "tsc -p tsconfig.json && node -e \"require('fs').cpSync('src/db/migrations','dist/db/migrations',{recursive:true})\"",
     "start": "node dist/server.js",
-    "start:render": "echo 'Starting migration...' && node dist/db/migrate.js && echo 'Migration completed, starting server...' && node dist/server.js",
+    "start:render": "echo 'Starting server directly...' && node dist/server.js",
     "start:worker": "node dist/workers.js",
     "typecheck": "tsc --noEmit",
     "db:migrate": "node scripts/migrate.js",
