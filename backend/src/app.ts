@@ -275,5 +275,4 @@ export function createApp() {
   return app;
 }
 
-// Export the app instance for testing
-export const app = createApp();
+// Export createApp only — do not call createApp() here to avoid double-initialization

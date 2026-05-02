@@ -46,7 +46,7 @@ async function start() {
     logger.info('✅ Database health check passed');
 
     logger.info('🌐 Starting HTTP server...');
-    server = app.listen(port, () => {
+    server = app.listen(port, '0.0.0.0', () => {
       logger.info('🎉 KORA backend started successfully!', {
         port,
         environment: config.NODE_ENV,
