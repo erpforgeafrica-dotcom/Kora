@@ -111,7 +111,8 @@ async function main() {
 main()
   .then(async () => {
     await dbPool.end();
-    process.exit(0);
+    // Don't exit process - let the calling script continue
+    console.log("🎯 Migration script completed successfully");
   })
   .catch(async (error) => {
     console.error("Fatal error during migration:", error);
