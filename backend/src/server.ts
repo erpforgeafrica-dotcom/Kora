@@ -39,16 +39,22 @@ async function shutdown(signal: string) {
 
 async function start() {
   try {
+    logger.info('🚀 Starting KORA server initialization...');
+    
+    logger.info('📊 Checking database health...');
     await initializeDatabase();
+    logger.info('✅ Database health check passed');
 
+    logger.info('🌐 Starting HTTP server...');
     server = app.listen(port, () => {
-      logger.info('KORA backend started', {
+      logger.info('🎉 KORA backend started successfully!', {
         port,
         environment: config.NODE_ENV,
         url: `http://localhost:${port}`
       });
     });
 
+    logger.info('📡 Registering process handlers...');
     process.on('SIGTERM', () => shutdown('SIGTERM'));
     process.on('SIGINT', () => shutdown('SIGINT'));
     process.on('uncaughtException', (err: Error) => {
@@ -59,8 +65,10 @@ async function start() {
       logger.error('Unhandled rejection', { reason: String(reason) });
       shutdown('unhandledRejection');
     });
+    
+    logger.info('✅ Server initialization complete');
   } catch (err) {
-    logger.error('Failed to start server', { error: err instanceof Error ? err.message : String(err) });
+    logger.error('❌ Failed to start server', { error: err instanceof Error ? err.message : String(err) });
     process.exit(1);
   }
 }
