@@ -1,0 +1,118 @@
+services:
+  # ── Redis for Staging ────────────────────────────────────────────────────────
+  - type: redis
+    name: kora-redis-staging
+    plan: free
+    ipAllowList: []
+
+  # ── Backend API (Staging) ────────────────────────────────────────────────────
+  - type: web
+    name: kora-backend-staging
+    runtime: node
+    rootDir: backend
+    plan: starter
+    buildCommand: npm ci && npm run build
+    startCommand: npm run start:render
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_VERSION
+        value: 20
+      - key: NODE_ENV
+        value: staging
+      - key: LOG_LEVEL
+        value: debug
+      - key: ENABLE_DEMO_MODE
+        value: true
+      - key: ENABLE_MOCK_PAYMENTS
+        value: true
+      - key: DB_POOL_MAX
+        value: 10
+      - key: DB_POOL_MIN
+        value: 2
+      - key: DB_IDLE_TIMEOUT
+        value: 30000
+      - key: DB_CONNECTION_TIMEOUT
+        value: 5000
+      - key: DB_STATEMENT_TIMEOUT
+        value: 30000
+      - key: DB_QUERY_TIMEOUT
+        value: 30000
+      # ── Supabase Staging Database (set in Render dashboard → Environment) ────
+      # DATABASE_URL = postgresql://postgres.xxxxx:xxxxxx@aws-0-eu-west-1.pooler.supabase.com:6543/kora_staging
+      - key: DATABASE_URL
+        sync: false
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: kora-redis-staging
+          property: connectionString
+      # ── Secrets (set in Render dashboard → Environment) ───────────────────────
+      - key: JWT_SECRET
+        sync: false
+      - key: SESSION_SECRET
+        sync: false
+      - key: CLERK_SECRET_KEY
+        sync: false
+      - key: CLERK_AUTHORIZED_PARTIES
+        sync: false
+      - key: CLERK_WEBHOOK_SECRET
+        sync: false
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false
+      - key: SENTRY_DSN
+        sync: false
+      - key: CORS_ORIGINS
+        sync: false
+      - key: API_BASE_URL
+        sync: false
+
+  # ── Background Worker (Staging) ──────────────────────────────────────────────
+  - type: worker
+    name: kora-worker-staging
+    runtime: node
+    rootDir: backend
+    plan: starter
+    buildCommand: npm ci && npm run build
+    startCommand: npm run start:worker
+    envVars:
+      - key: NODE_VERSION
+        value: 20
+      - key: NODE_ENV
+        value: staging
+      - key: DATABASE_URL
+        sync: false
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: kora-redis-staging
+          property: connectionString
+      - key: JWT_SECRET
+        sync: false
+      - key: SESSION_SECRET
+        sync: false
+      - key: CLERK_SECRET_KEY
+        sync: false
+      - key: STRIPE_SECRET_KEY
+        sync: false
+
+  # ── Frontend (Staging) ───────────────────────────────────────────────────────
+  - type: web
+    name: kora-frontend-staging
+    runtime: static
+    rootDir: frontend
+    plan: free
+    buildCommand: npm ci && npm run build
+    staticPublishPath: ./dist
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: NODE_VERSION
+        value: 20
+      - key: VITE_API_BASE_URL
+        sync: false
+      - key: VITE_CLERK_PUBLISHABLE_KEY
+        sync: false
