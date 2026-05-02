@@ -80,10 +80,11 @@ export function createApp() {
   const app = express();
   const currentDir = path.dirname(fileURLToPath(import.meta.url));
 
-  // Initialize threat detection system
-  initializeThreatDetection(app).catch(err => {
-    logger.error('Threat detection initialization failed', { error: err.message });
-  });
+  // Initialize threat detection system (non-blocking)
+  // Temporarily disabled for debugging
+  // initializeThreatDetection(app).catch(err => {
+  //   logger.warn('Threat detection initialization failed - continuing without it', { error: err.message });
+  // });
 
   // Security headers — production-hardened
   app.use(helmet({
