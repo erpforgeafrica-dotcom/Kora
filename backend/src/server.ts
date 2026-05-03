@@ -1,4 +1,14 @@
 import "dotenv/config";
+
+// Must be first — catches any module-level throws before logger is ready
+process.on('uncaughtException', (err) => {
+  console.error('UNCAUGHT EXCEPTION:', err.message, err.stack);
+  process.exit(1);
+});
+process.on('unhandledRejection', (reason) => {
+  console.error('UNHANDLED REJECTION:', reason);
+  process.exit(1);
+});
 import { createApp } from "./app.js";
 import { checkDatabaseHealth } from "./db/client.js";
 import { logger } from "./shared/logger.js";
@@ -74,6 +84,6 @@ async function start() {
 }
 
 start().catch((err) => {
-  logger.error('Startup failed', { error: err instanceof Error ? err.message : String(err) });
+  console.error('FATAL: Startup failed:', err);
   process.exit(1);
 });

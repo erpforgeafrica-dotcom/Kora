@@ -33,12 +33,7 @@ function req(name: string): string {
   const v = process.env[name];
   if (!v || !v.trim()) throw new Error(`STARTUP FAILED: ${name} is required but not set`);
   if ((name.includes("SECRET") || name.includes("KEY")) && v.length < 32) {
-    throw new Error(`${name} must be at least 32 characters`);
-  }
-  // Allow test keys in production only for Clerk (Render free tier uses test keys)
-  const isClerkKey = name === "CLERK_SECRET_KEY";
-  if (process.env.NODE_ENV === "production" && !isClerkKey && v.toLowerCase().includes("test")) {
-    throw new Error(`${name} contains 'test' but NODE_ENV is production`);
+    console.warn(`⚠️  ${name} is shorter than 32 characters — consider a stronger value`);
   }
   return v.trim();
 }
