@@ -48,7 +48,7 @@ services:
       - key: JWT_SECRET
         value: 7E68C9C7991F8A6CA113A4867B5BFF16F0E0307AC54DF471E7CA768AE7C6A227
       - key: SESSION_SECRET
-        value: super_secret_session_key_that_is_at_least_32_chars_kora2024
+        value: kora_session_secret_key_production_2024_render_deploy
       - key: CLERK_SECRET_KEY
         value: sk_test_Hkd6sNcwj9C4tQ8VOMUAbSv3HjimNEYxndUz5ffK7p
       - key: CLERK_AUTHORIZED_PARTIES
