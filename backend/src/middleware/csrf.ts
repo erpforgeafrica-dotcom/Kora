@@ -9,23 +9,22 @@ interface CSRFRequest extends Request {
   sessionID?: string;
 }
 
-// Redis client for CSRF token storage (DB 2)
-const redisOptions = process.env.REDIS_URL
-  ? { maxRetriesPerRequest: 3 }
-  : {
-      host: process.env.REDIS_HOST || "localhost",
-      port: parseInt(process.env.REDIS_PORT || "6379"),
-      password: process.env.REDIS_PASSWORD,
-      db: 2,
-      maxRetriesPerRequest: 3,
-    };
-const redisCsrf = process.env.REDIS_URL
-  ? new Redis(process.env.REDIS_URL, redisOptions)
-  : new Redis(redisOptions);
-
-redisCsrf.on("error", (err: Error) => {
-  logger.error("Redis CSRF error", { message: err.message });
-});
+// Redis client for CSRF token storage — lazy, non-fatal
+let redisCsrf: Redis | null = null;
+function getCsrfRedis(): Redis | null {
+  if (!process.env.REDIS_URL) return null;
+  if (!redisCsrf) {
+    redisCsrf = new Redis(process.env.REDIS_URL, {
+      maxRetriesPerRequest: 1,
+      lazyConnect: true,
+      enableReadyCheck: false,
+    });
+    redisCsrf.on("error", (err: Error) => {
+      logger.error("Redis CSRF error", { message: err.message });
+    });
+  }
+  return redisCsrf;
+}
 
 // Fallback in-memory store for environments without Redis
 const csrfTokenMemory = new Map<string, { token: string; expires: number }>();
@@ -34,7 +33,9 @@ const csrfTokenMemory = new Map<string, { token: string; expires: number }>();
 
 async function redisGetCSRF(sessionId: string): Promise<string | null> {
   try {
-    return await redisCsrf.get(`csrf:${sessionId}`);
+    const client = getCsrfRedis();
+    if (!client) return null;
+    return await client.get(`csrf:${sessionId}`);
   } catch {
     const data = csrfTokenMemory.get(sessionId);
     return data && data.expires > Date.now() ? data.token : null;
@@ -43,7 +44,9 @@ async function redisGetCSRF(sessionId: string): Promise<string | null> {
 
 async function redisSetCSRF(sessionId: string, token: string, ttlSeconds: number): Promise<void> {
   try {
-    await redisCsrf.setex(`csrf:${sessionId}`, ttlSeconds, token);
+    const client = getCsrfRedis();
+    if (!client) throw new Error("no redis");
+    await client.setex(`csrf:${sessionId}`, ttlSeconds, token);
   } catch {
     csrfTokenMemory.set(sessionId, { token, expires: Date.now() + ttlSeconds * 1000 });
   }
@@ -51,7 +54,9 @@ async function redisSetCSRF(sessionId: string, token: string, ttlSeconds: number
 
 async function redisDeleteCSRF(sessionId: string): Promise<void> {
   try {
-    await redisCsrf.del(`csrf:${sessionId}`);
+    const client = getCsrfRedis();
+    if (!client) throw new Error("no redis");
+    await client.del(`csrf:${sessionId}`);
   } catch {
     csrfTokenMemory.delete(sessionId);
   }

@@ -14,27 +14,22 @@ import type { Role } from "../middleware/auth.js";
  * - Session lifecycle management
  */
 
-// Redis client for session storage (DB 3)
-const redisOptions = process.env.REDIS_URL 
-  ? { maxRetriesPerRequest: 3 }
-  : {
-      host: process.env.REDIS_HOST || "localhost",
-      port: parseInt(process.env.REDIS_PORT || "6379"),
-      password: process.env.REDIS_PASSWORD,
-      db: 3, // Use DB 3 for sessions (0 = BullMQ, 1 = cache, 2 = CSRF)
-      maxRetriesPerRequest: 3,
-    };
-
-const redisSession = process.env.REDIS_URL 
-  ? new Redis(process.env.REDIS_URL, redisOptions) 
-  : new Redis(redisOptions);
-
-redisSession.on("error", (err: Error) => {
-  logger.error("Redis session store error", { 
-    message: err.message,
-    stack: err.stack,
-  });
-});
+// Redis client for session storage — lazy, non-fatal
+let redisSession: Redis | null = null;
+function getSessionRedis(): Redis | null {
+  if (!process.env.REDIS_URL) return null;
+  if (!redisSession) {
+    redisSession = new Redis(process.env.REDIS_URL, {
+      maxRetriesPerRequest: 1,
+      lazyConnect: true,
+      enableReadyCheck: false,
+    });
+    redisSession.on("error", (err: Error) => {
+      logger.error("Redis session store error", { message: err.message, stack: err.stack });
+    });
+  }
+  return redisSession;
+}
 
 // Fallback in-memory store for test environments
 const sessionMemory = new Map<string, SessionData>();
@@ -141,7 +136,9 @@ export async function createSession(
 
   const key = `sessions:${sessionId}`;
   try {
-    await redisSession.setex(key, SESSION_CONFIG.TTL_SECONDS, JSON.stringify(sessionData));
+    const client = getSessionRedis();
+    if (!client) throw new Error("no redis");
+    await client.setex(key, SESSION_CONFIG.TTL_SECONDS, JSON.stringify(sessionData));
     logger.info("Session created", { 
       userId, 
       organizationId, 
@@ -162,7 +159,9 @@ export async function createSession(
 export async function loadSession(sessionId: string): Promise<SessionData | null> {
   const key = `sessions:${sessionId}`;
   try {
-    const data = await redisSession.get(key);
+    const client = getSessionRedis();
+    if (!client) return sessionMemory.get(key) ?? null;
+    const data = await client.get(key);
     if (!data) return null;
     return JSON.parse(data) as SessionData;
   } catch (err) {
@@ -177,14 +176,14 @@ export async function loadSession(sessionId: string): Promise<SessionData | null
 export async function updateSessionActivity(sessionId: string): Promise<void> {
   const key = `sessions:${sessionId}`;
   try {
+    const client = getSessionRedis();
+    if (!client) return;
     const session = await loadSession(sessionId);
     if (!session) return;
-
     const now = Math.floor(Date.now() / 1000);
     session.lastActivity = now;
     session.expiresAt = now + SESSION_CONFIG.TTL_SECONDS;
-
-    await redisSession.setex(key, SESSION_CONFIG.TTL_SECONDS, JSON.stringify(session));
+    await client.setex(key, SESSION_CONFIG.TTL_SECONDS, JSON.stringify(session));
   } catch (err) {
     logger.warn("Redis session update failed", { sessionId, error: String(err) });
   }
@@ -196,7 +195,9 @@ export async function updateSessionActivity(sessionId: string): Promise<void> {
 export async function invalidateSession(sessionId: string): Promise<void> {
   const key = `sessions:${sessionId}`;
   try {
-    await redisSession.del(key);
+    const client = getSessionRedis();
+    if (!client) { sessionMemory.delete(key); return; }
+    await client.del(key);
     logger.info("Session invalidated", { sessionId: sessionId.substring(0, 8) + "..." });
   } catch (err) {
     logger.warn("Redis session delete failed, trying memory", { sessionId, error: String(err) });
@@ -208,21 +209,23 @@ export async function invalidateSession(sessionId: string): Promise<void> {
  * Refresh CSRF token within session
  */
 export async function refreshSessionCSRFToken(sessionId: string): Promise<string | null> {
-  const session = await loadSession(sessionId);
-  if (!session) return null;
-
-  const newCSRFToken = generateCSRFToken();
-  session.csrfToken = newCSRFToken;
-
-  const key = `sessions:${sessionId}`;
   try {
-    await redisSession.setex(key, SESSION_CONFIG.TTL_SECONDS, JSON.stringify(session));
+    const session = await loadSession(sessionId);
+    if (!session) return null;
+    const newCSRFToken = generateCSRFToken();
+    session.csrfToken = newCSRFToken;
+    const key = `sessions:${sessionId}`;
+    const client = getSessionRedis();
+    if (client) {
+      await client.setex(key, SESSION_CONFIG.TTL_SECONDS, JSON.stringify(session));
+    } else {
+      sessionMemory.set(key, session);
+    }
+    return newCSRFToken;
   } catch (err) {
-    logger.warn("Redis CSRF refresh failed, trying memory", { sessionId, error: String(err) });
-    sessionMemory.set(key, session);
+    logger.warn("Redis CSRF refresh failed", { sessionId, error: String(err) });
+    return null;
   }
-
-  return newCSRFToken;
 }
 
 /**
@@ -251,25 +254,18 @@ export async function getSessionHealth(): Promise<{
   idle: number;
 }> {
   try {
-    const keys = await redisSession.keys("sessions:*");
-    let active = 0;
-    let expired = 0;
-    let idle = 0;
-
+    const client = getSessionRedis();
+    if (!client) return { active: 0, expired: 0, idle: 0 };
+    const keys = await client.keys("sessions:*");
+    let active = 0, expired = 0, idle = 0;
     for (const key of keys) {
-      const data = await redisSession.get(key);
+      const data = await client.get(key);
       if (!data) continue;
-      
       const session = JSON.parse(data) as SessionData;
-      if (isSessionExpired(session)) {
-        expired++;
-      } else if (isSessionIdle(session)) {
-        idle++;
-      } else {
-        active++;
-      }
+      if (isSessionExpired(session)) expired++;
+      else if (isSessionIdle(session)) idle++;
+      else active++;
     }
-
     return { active, expired, idle };
   } catch (err) {
     logger.error("Failed to get session health", { error: String(err) });
@@ -282,16 +278,16 @@ export async function getSessionHealth(): Promise<{
  */
 export async function cleanupExpiredSessions(): Promise<number> {
   try {
-    const keys = await redisSession.keys("sessions:*");
+    const client = getSessionRedis();
+    if (!client) return 0;
+    const keys = await client.keys("sessions:*");
     let cleaned = 0;
-
     for (const key of keys) {
-      const data = await redisSession.get(key);
+      const data = await client.get(key);
       if (!data) continue;
-      
       const session = JSON.parse(data) as SessionData;
       if (isSessionExpired(session)) {
-        await redisSession.del(key);
+        await client.del(key);
         cleaned++;
       }
     }
