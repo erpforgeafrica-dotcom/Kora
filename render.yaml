@@ -8,11 +8,10 @@ services:
   # ── Backend API ───────────────────────────────────────────────────────────────
   - type: web
     name: kora-backend
-    runtime: node
-    rootDir: backend
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
     plan: starter
-    buildCommand: npm ci && npm run build
-    startCommand: node dist/db/migrate.js && node dist/server.js
     healthCheckPath: /health
     envVars:
       - key: NODE_VERSION
