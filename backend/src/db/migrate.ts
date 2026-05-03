@@ -108,10 +108,11 @@ async function main() {
   }
 }
 
+const isMain = process.argv[1]?.includes('migrate');
+
 main()
   .then(async () => {
-    await dbPool.end();
-    // Don't exit process - let the calling script continue
+    if (isMain) await dbPool.end();
     console.log("🎯 Migration script completed successfully");
   })
   .catch(async (error) => {

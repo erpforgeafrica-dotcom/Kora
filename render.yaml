@@ -12,7 +12,7 @@ services:
     rootDir: backend
     plan: starter
     buildCommand: npm ci && npm run build
-    startCommand: npm run start:render
+    startCommand: node dist/db/migrate.js && node dist/server.js
     healthCheckPath: /health
     envVars:
       - key: NODE_VERSION

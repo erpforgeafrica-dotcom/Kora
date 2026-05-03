@@ -70,7 +70,6 @@ import { clerkWebhookRoutes } from "./modules/webhooks/clerkRoutes.js";
 import { stripeWebhookRoutes } from "./modules/webhooks/stripeRoutes.js";
 import { requireFeature, checkUsageLimit } from "./middleware/planGate.js";
 import { sessionMiddleware } from "./middleware/session.js";
-import { initializeThreatDetection } from "./services/threatDetection/init.js";
 
 const requireAuth = auth.requireAuth;
 const optionalAuth = auth.optionalAuth;

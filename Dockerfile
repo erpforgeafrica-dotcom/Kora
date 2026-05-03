@@ -15,9 +15,9 @@ COPY backend/package*.json ./backend/
 WORKDIR /app/backend
 RUN npm ci --only=production
 COPY --from=builder /app/backend/dist ./dist
-COPY --from=builder /app/backend/src/db/migrations ./src/db/migrations
-EXPOSE 3000
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-  CMD node -e "require('http').get('http://localhost:3000/health', (r) => {if (r.statusCode !== 200) throw new Error(r.statusCode)})" || exit 1
+COPY --from=builder /app/backend/dist/db/migrations ./dist/db/migrations
+EXPOSE 10000
+HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
+  CMD node -e "require('http').get('http://localhost:' + (process.env.PORT||10000) + '/health', (r) => {if (r.statusCode !== 200) throw new Error(r.statusCode)})" || exit 1
 ENTRYPOINT ["dumb-init", "--"]
-CMD ["npm", "run", "start:render"]
+CMD ["node", "dist/server.js"]
