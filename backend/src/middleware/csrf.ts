@@ -1,64 +1,95 @@
 import type { Request, Response, NextFunction } from "express";
 import crypto from "node:crypto";
-import { Redis } from "ioredis";
 import { logger } from "../shared/logger.js";
 import { respondForbidden, respondSuccess } from "../shared/response.js";
+import { makeLazyRedis, recordSuccess, recordFailure } from "../shared/redisCircuitBreaker.js";
+
+// ── Redis ─────────────────────────────────────────────────────────────────────
+
+const getRedis = makeLazyRedis("csrf");
+
+// ── Config ────────────────────────────────────────────────────────────────────
+
+const CSRF_TTL_SECONDS   = 3_600;  // token lifetime: 1 h
+const RATE_WINDOW_SECS   = 60;     // sliding window: 1 min
+const RATE_MAX_REQUESTS  = 30;     // max CSRF ops per IP per window
+
+// ── Types ─────────────────────────────────────────────────────────────────────
 
 interface CSRFRequest extends Request {
   csrfToken?: string;
   sessionID?: string;
 }
 
-// Redis client for CSRF token storage — lazy, non-fatal
-let redisCsrf: Redis | null = null;
-function getCsrfRedis(): Redis | null {
-  if (!process.env.REDIS_URL) return null;
-  if (!redisCsrf) {
-    redisCsrf = new Redis(process.env.REDIS_URL, {
-      maxRetriesPerRequest: 1,
-      lazyConnect: true,
-      enableReadyCheck: false,
-    });
-    redisCsrf.on("error", (err: Error) => {
-      logger.error("Redis CSRF error", { message: err.message });
-    });
-  }
-  return redisCsrf;
-}
+// ── In-memory fallback ────────────────────────────────────────────────────────
 
-// Fallback in-memory store for environments without Redis
-const csrfTokenMemory = new Map<string, { token: string; expires: number }>();
+const csrfMemory = new Map<string, { token: string; expires: number }>();
 
-// ── Internal Redis helpers (prefixed to avoid name collision) ─────────────────
+// ── Rate limiting (sliding window via Redis INCR) ─────────────────────────────
 
-async function redisGetCSRF(sessionId: string): Promise<string | null> {
+async function checkRateLimit(ip: string): Promise<boolean> {
+  const client = getRedis();
+  if (!client) return true; // no Redis → allow (fail open for rate limiting only)
+
+  const key = `csrf:rl:${ip}`;
   try {
-    const client = getCsrfRedis();
-    if (!client) return null;
-    return await client.get(`csrf:${sessionId}`);
-  } catch {
-    const data = csrfTokenMemory.get(sessionId);
-    return data && data.expires > Date.now() ? data.token : null;
+    const pipe    = client.pipeline();
+    pipe.incr(key);
+    pipe.expire(key, RATE_WINDOW_SECS);
+    const results = await pipe.exec();
+    recordSuccess("csrf");
+    const count = (results?.[0]?.[1] as number) ?? 0;
+    return count <= RATE_MAX_REQUESTS;
+  } catch (err) {
+    recordFailure("csrf");
+    logger.warn("CSRF rate-limit check failed", { ip, error: String(err) });
+    return true; // fail open
   }
 }
 
-async function redisSetCSRF(sessionId: string, token: string, ttlSeconds: number): Promise<void> {
+// ── Token storage ─────────────────────────────────────────────────────────────
+
+async function getToken(sessionId: string): Promise<string | null> {
+  const client = getRedis();
+  if (!client) {
+    const d = csrfMemory.get(sessionId);
+    return d && d.expires > Date.now() ? d.token : null;
+  }
   try {
-    const client = getCsrfRedis();
-    if (!client) throw new Error("no redis");
-    await client.setex(`csrf:${sessionId}`, ttlSeconds, token);
-  } catch {
-    csrfTokenMemory.set(sessionId, { token, expires: Date.now() + ttlSeconds * 1000 });
+    const val = await client.get(`csrf:${sessionId}`);
+    recordSuccess("csrf");
+    return val;
+  } catch (err) {
+    recordFailure("csrf");
+    const d = csrfMemory.get(sessionId);
+    return d && d.expires > Date.now() ? d.token : null;
   }
 }
 
-async function redisDeleteCSRF(sessionId: string): Promise<void> {
+async function setToken(sessionId: string, token: string): Promise<void> {
+  const client = getRedis();
+  if (!client) {
+    csrfMemory.set(sessionId, { token, expires: Date.now() + CSRF_TTL_SECONDS * 1000 });
+    return;
+  }
   try {
-    const client = getCsrfRedis();
-    if (!client) throw new Error("no redis");
+    await client.setex(`csrf:${sessionId}`, CSRF_TTL_SECONDS, token);
+    recordSuccess("csrf");
+  } catch (err) {
+    recordFailure("csrf");
+    csrfMemory.set(sessionId, { token, expires: Date.now() + CSRF_TTL_SECONDS * 1000 });
+  }
+}
+
+async function deleteToken(sessionId: string): Promise<void> {
+  csrfMemory.delete(sessionId);
+  const client = getRedis();
+  if (!client) return;
+  try {
     await client.del(`csrf:${sessionId}`);
-  } catch {
-    csrfTokenMemory.delete(sessionId);
+    recordSuccess("csrf");
+  } catch (err) {
+    recordFailure("csrf");
   }
 }
 
@@ -66,11 +97,12 @@ async function redisDeleteCSRF(sessionId: string): Promise<void> {
 
 export async function generateCSRFToken(sessionId: string): Promise<string> {
   const token = crypto.randomBytes(32).toString("hex");
-  await redisSetCSRF(sessionId, token, 60 * 60);
+  await setToken(sessionId, token);
   return token;
 }
 
-export function csrfToken(req: CSRFRequest, res: Response, next: NextFunction) {
+/** Middleware: attach or reuse CSRF token for the session. */
+export function csrfToken(req: CSRFRequest, res: Response, next: NextFunction): void {
   const sessionId =
     (req as any).sessionID ||
     (req.headers["x-session-id"] as string) ||
@@ -78,19 +110,27 @@ export function csrfToken(req: CSRFRequest, res: Response, next: NextFunction) {
 
   (async () => {
     try {
-      let token = await redisGetCSRF(sessionId);
+      const ip = req.ip ?? "unknown";
+      if (!(await checkRateLimit(ip))) {
+        logger.warn("CSRF rate limit exceeded", { ip });
+        return respondForbidden(res, "Too many requests");
+      }
+
+      let token = await getToken(sessionId);
       if (!token) token = await generateCSRFToken(sessionId);
-      req.csrfToken = token;
-      res.locals.sessionId = sessionId;
+
+      req.csrfToken          = token;
+      res.locals.sessionId   = sessionId;
       next();
     } catch (err) {
-      logger.error("CSRF token generation failed", { sessionId, error: String(err) });
+      logger.error("CSRF token generation failed", { error: String(err) });
       next(err);
     }
   })();
 }
 
-export function validateCSRF(req: Request, res: Response, next: NextFunction) {
+/** Middleware: validate CSRF token on state-mutating requests, then rotate it. */
+export function validateCSRF(req: Request, res: Response, next: NextFunction): void {
   if (process.env.NODE_ENV === "test" || process.env.VITEST === "true") return next();
   if (["GET", "HEAD", "OPTIONS"].includes(req.method)) return next();
   if (req.path.includes("/webhook")) return next();
@@ -100,10 +140,7 @@ export function validateCSRF(req: Request, res: Response, next: NextFunction) {
     req.path.startsWith("/api/auth/logout")
   ) return next();
 
-  const sessionId =
-    res.locals.sessionId ||
-    (req as any).sessionID ||
-    (req.headers["x-session-id"] as string);
+  const sessionId    = res.locals.sessionId || (req as any).sessionID || (req.headers["x-session-id"] as string);
   const providedToken = (req.headers["x-csrf-token"] as string) || req.body?._csrf;
 
   if (!providedToken) {
@@ -115,16 +152,32 @@ export function validateCSRF(req: Request, res: Response, next: NextFunction) {
     try {
       if (!sessionId) return respondForbidden(res, "Invalid CSRF session");
 
-      const storedToken = await redisGetCSRF(sessionId);
+      const ip = req.ip ?? "unknown";
+      if (!(await checkRateLimit(ip))) {
+        logger.warn("CSRF rate limit exceeded on validate", { ip, path: req.path });
+        return respondForbidden(res, "Too many requests");
+      }
+
+      const storedToken = await getToken(sessionId);
       if (!storedToken) {
         logger.warn("CSRF session expired or not found", { sessionId, path: req.path });
         return respondForbidden(res, "Invalid CSRF session");
       }
 
-      if (storedToken !== providedToken) {
+      const provided = Buffer.from(providedToken, "hex");
+      const stored   = Buffer.from(storedToken,   "hex");
+      const valid    =
+        provided.length === stored.length &&
+        crypto.timingSafeEqual(provided, stored);
+
+      if (!valid) {
         logger.warn("CSRF token mismatch", { sessionId, path: req.path });
         return respondForbidden(res, "Invalid CSRF token");
       }
+
+      // Rotate token after successful validation (prevents token reuse)
+      const newToken = await generateCSRFToken(sessionId);
+      res.setHeader("x-csrf-token", newToken);
 
       next();
     } catch (err) {
@@ -134,13 +187,20 @@ export function validateCSRF(req: Request, res: Response, next: NextFunction) {
   })();
 }
 
-// ── Endpoint handler ──────────────────────────────────────────────────────────
-
-export async function getCSRFToken(req: CSRFRequest, res: Response) {
+/** Endpoint: issue a fresh CSRF token for the caller's session. */
+export async function getCSRFToken(req: CSRFRequest, res: Response): Promise<Response> {
   const sessionId =
     (req as any).sessionID ||
     (req.headers["x-session-id"] as string) ||
     "anonymous";
+
+  const ip = req.ip ?? "unknown";
+  if (!(await checkRateLimit(ip))) {
+    return respondForbidden(res, "Too many requests");
+  }
+
   const token = await generateCSRFToken(sessionId);
   return respondSuccess(res, { csrfToken: token });
 }
+
+export { deleteToken as deleteCSRFToken };
