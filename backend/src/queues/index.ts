@@ -6,20 +6,17 @@ const redisUri = new URL(redisUrl);
 
 export const queueConnection = {
   host: redisUri.hostname,
-  port: Number(redisUri.port || "6379")
+  port: Number(redisUri.port || "6379"),
+  lazyConnect: true,
+  maxRetriesPerRequest: null,
+  enableReadyCheck: false,
 };
 
-export const notificationsQueue = new Queue("notifications", {
-  connection: queueConnection
-});
+const queueOptions = { connection: queueConnection };
 
-export const reportingQueue = new Queue("reporting", {
-  connection: queueConnection
-});
-
-export const anomalyQueue = new Queue("anomaly-detector", {
-  connection: queueConnection
-});
+export const notificationsQueue = new Queue("notifications", queueOptions);
+export const reportingQueue = new Queue("reporting", queueOptions);
+export const anomalyQueue = new Queue("anomaly-detector", queueOptions);
 
 export interface NotificationJobData {
   organizationId: string;

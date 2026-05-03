@@ -2,27 +2,26 @@ import type { Request, Response, NextFunction } from "express";
 import { Redis } from "ioredis";
 import { logger } from "../shared/logger.js";
 
-// Redis client for caching
-const redisOptions = process.env.REDIS_URL 
-  ? { maxRetriesPerRequest: 3 }
-  : {
-      host: process.env.REDIS_HOST || "localhost",
-      port: parseInt(process.env.REDIS_PORT || "6379"),
-      password: process.env.REDIS_PASSWORD,
-      db: 1, // Use DB 1 for caching (DB 0 is for BullMQ)
-      maxRetriesPerRequest: 3,
-    };
-const redis = process.env.REDIS_URL ? new Redis(process.env.REDIS_URL, redisOptions) : new Redis(redisOptions);
+let redis: Redis | null = null;
 
-redis.on("error", (err: Error) => {
-  logger.error("Redis cache error", { 
-    url: process.env.REDIS_URL,
-    message: err.message,
-    name: err.name,
-    stack: err.stack,
-    full: JSON.stringify(err)
-  });
-});
+function getRedis(): Redis | null {
+  if (!process.env.REDIS_URL) return null;
+  if (!redis) {
+    try {
+      redis = new Redis(process.env.REDIS_URL, {
+        maxRetriesPerRequest: 1,
+        lazyConnect: true,
+        enableReadyCheck: false,
+      });
+      redis.on("error", (err: Error) => {
+        logger.warn("Redis cache error", { message: err.message });
+      });
+    } catch {
+      redis = null;
+    }
+  }
+  return redis;
+}
 
 /**
  * Cache middleware for GET requests
@@ -44,25 +43,21 @@ export function cacheMiddleware(ttlSeconds = 300) {
     const cacheKey = `cache:${orgId}:${userRole}:${req.originalUrl}`;
 
     try {
-      const cached = await redis.get(cacheKey);
+      const client = getRedis();
+      const cached = client ? await client.get(cacheKey) : null;
       if (cached) {
         logger.debug("Cache hit", { key: cacheKey });
         res.setHeader("X-Cache", "HIT");
         return res.json(JSON.parse(cached));
       }
 
-      // Store original json method
       const originalJson = res.json.bind(res);
-      
-      // Override json method to cache response
       res.json = function(data: any) {
-        // Cache successful responses only
-        if (res.statusCode >= 200 && res.statusCode < 300) {
-          redis.setex(cacheKey, ttlSeconds, JSON.stringify(data)).catch((err: Error) => {
+        if (res.statusCode >= 200 && res.statusCode < 300 && client) {
+          client.setex(cacheKey, ttlSeconds, JSON.stringify(data)).catch((err: Error) => {
             logger.warn("Failed to cache response", { key: cacheKey, error: err.message });
           });
         }
-        
         res.setHeader("X-Cache", "MISS");
         return originalJson(data);
       };
@@ -80,11 +75,10 @@ export function cacheMiddleware(ttlSeconds = 300) {
  */
 export async function invalidateCache(pattern: string) {
   try {
-    const keys = await redis.keys(pattern);
-    if (keys.length > 0) {
-      await redis.del(...keys);
-      logger.info("Cache invalidated", { pattern, count: keys.length });
-    }
+    const client = getRedis();
+    if (!client) return;
+    const keys = await client.keys(pattern);
+    if (keys.length > 0) await client.del(...keys);
   } catch (error) {
     logger.error("Cache invalidation failed", { pattern, error: error instanceof Error ? error.message : "unknown" });
   }

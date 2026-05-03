@@ -9,7 +9,6 @@ COPY backend ./
 RUN npm run build
 
 FROM base AS production
-ENV NODE_ENV=production
 RUN apk add --no-cache dumb-init
 COPY backend/package*.json ./backend/
 WORKDIR /app/backend
