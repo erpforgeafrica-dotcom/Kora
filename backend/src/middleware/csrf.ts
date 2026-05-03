@@ -113,7 +113,7 @@ export function csrfToken(req: CSRFRequest, res: Response, next: NextFunction): 
       const ip = req.ip ?? "unknown";
       if (!(await checkRateLimit(ip))) {
         logger.warn("CSRF rate limit exceeded", { ip });
-        return respondForbidden(res, "Too many requests");
+        respondForbidden(res, "Too many requests"); return;
       }
 
       let token = await getToken(sessionId);
@@ -145,23 +145,23 @@ export function validateCSRF(req: Request, res: Response, next: NextFunction): v
 
   if (!providedToken) {
     logger.warn("CSRF token missing", { path: req.path, method: req.method, ip: req.ip });
-    return respondForbidden(res, "CSRF token required");
+    respondForbidden(res, "CSRF token required"); return;
   }
 
   (async () => {
     try {
-      if (!sessionId) return respondForbidden(res, "Invalid CSRF session");
+      if (!sessionId) { respondForbidden(res, "Invalid CSRF session"); return; }
 
       const ip = req.ip ?? "unknown";
       if (!(await checkRateLimit(ip))) {
         logger.warn("CSRF rate limit exceeded on validate", { ip, path: req.path });
-        return respondForbidden(res, "Too many requests");
+        respondForbidden(res, "Too many requests"); return;
       }
 
       const storedToken = await getToken(sessionId);
       if (!storedToken) {
         logger.warn("CSRF session expired or not found", { sessionId, path: req.path });
-        return respondForbidden(res, "Invalid CSRF session");
+        respondForbidden(res, "Invalid CSRF session"); return;
       }
 
       const provided = Buffer.from(providedToken, "hex");
@@ -172,7 +172,7 @@ export function validateCSRF(req: Request, res: Response, next: NextFunction): v
 
       if (!valid) {
         logger.warn("CSRF token mismatch", { sessionId, path: req.path });
-        return respondForbidden(res, "Invalid CSRF token");
+        respondForbidden(res, "Invalid CSRF token"); return;
       }
 
       // Rotate token after successful validation (prevents token reuse)
@@ -182,7 +182,7 @@ export function validateCSRF(req: Request, res: Response, next: NextFunction): v
       next();
     } catch (err) {
       logger.error("CSRF validation error", { sessionId, error: String(err) });
-      return respondForbidden(res, "CSRF validation failed");
+      respondForbidden(res, "CSRF validation failed");
     }
   })();
 }
