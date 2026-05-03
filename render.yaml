@@ -39,19 +39,18 @@ services:
       # ── Supabase (set in Render dashboard → Environment) ──────────────────────
       # DATABASE_URL = postgresql://postgres.zihocnhvtgodnawnvoyj:KoraDB2024secure@aws-0-eu-west-1.pooler.supabase.com:6543/postgres
       - key: DATABASE_URL
-        sync: false
+        value: postgresql://postgres.zihocnhvtgodnawnvoyj:KoraDB2024secure@aws-0-eu-west-1.pooler.supabase.com:6543/postgres
       - key: REDIS_URL
         fromService:
           type: redis
           name: kora-redis
           property: connectionString
-      # ── Secrets (set in Render dashboard → Environment) ───────────────────────
       - key: JWT_SECRET
-        sync: false
+        value: 7E68C9C7991F8A6CA113A4867B5BFF16F0E0307AC54DF471E7CA768AE7C6A227
       - key: SESSION_SECRET
-        sync: false
+        value: super_secret_session_key_that_is_at_least_32_chars_kora2024
       - key: CLERK_SECRET_KEY
-        sync: false
+        value: sk_test_Hkd6sNcwj9C4tQ8VOMUAbSv3HjimNEYxndUz5ffK7p
       - key: CLERK_AUTHORIZED_PARTIES
         sync: false
       - key: CLERK_WEBHOOK_SECRET
