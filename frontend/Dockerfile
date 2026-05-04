@@ -10,8 +10,19 @@ COPY . .
 EXPOSE 5173
 CMD ["npm", "run", "dev", "--", "--host"]
 
-# Build stage
+# Build stage - accepts environment variables as build args
 FROM base AS builder
+ARG VITE_API_BASE_URL=https://kora-production-7661.up.railway.app
+ARG VITE_CLERK_PUBLISHABLE_KEY
+ARG VITE_ORG_ID=org_production
+ARG VITE_APP_NAME=KORA
+
+# Export as environment variables so Vite can pick them up during build
+ENV VITE_API_BASE_URL=${VITE_API_BASE_URL}
+ENV VITE_CLERK_PUBLISHABLE_KEY=${VITE_CLERK_PUBLISHABLE_KEY}
+ENV VITE_ORG_ID=${VITE_ORG_ID}
+ENV VITE_APP_NAME=${VITE_APP_NAME}
+
 RUN npm ci
 COPY . .
 RUN npm run build
