@@ -29,7 +29,20 @@ if (typeof window !== "undefined") {
 }
 
 const CLERK_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY as string;
-if (!CLERK_KEY) throw new Error("VITE_CLERK_PUBLISHABLE_KEY is not set in frontend/.env");
+if (!CLERK_KEY) {
+  const errorMsg = "VITE_CLERK_PUBLISHABLE_KEY is not configured. Please check deployment environment variables.";
+  console.error(errorMsg);
+  document.body.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:center;min-height:100vh;background:#f5f5f5;font-family:system-ui">
+      <div style="text-align:center;padding:40px;background:white;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.1)">
+        <h1 style="color:#d32f2f;margin:0 0 20px 0">Configuration Error</h1>
+        <p style="color:#666;margin:0">${errorMsg}</p>
+        <p style="color:#999;font-size:12px;margin:20px 0 0 0">Please set VITE_CLERK_PUBLISHABLE_KEY in your deployment environment.</p>
+      </div>
+    </div>
+  `;
+  throw new Error(errorMsg);
+}
 
 export const queryClient = new QueryClient({
   defaultOptions: {
