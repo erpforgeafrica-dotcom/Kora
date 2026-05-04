@@ -36,35 +36,51 @@ services:
         value: 30000
       - key: DB_QUERY_TIMEOUT
         value: 30000
-      # ── Supabase (set in Render dashboard → Environment) ──────────────────────
-      # DATABASE_URL = postgresql://postgres.zihocnhvtgodnawnvoyj:KoraDB2024secure@aws-0-eu-west-1.pooler.supabase.com:6543/postgres
+      # ── Secrets (set in Render dashboard → Environment) ──────────────────────
+      # Database URL - required
       - key: DATABASE_URL
-        value: postgresql://postgres.zihocnhvtgodnawnvoyj:KoraDB2024secure@aws-0-eu-west-1.pooler.supabase.com:6543/postgres
+        sync: false
+      # Redis - auto-linked from service
       - key: REDIS_URL
         fromService:
           type: redis
           name: kora-redis
           property: connectionString
+      # Auth secrets - required
       - key: JWT_SECRET
-        value: 7E68C9C7991F8A6CA113A4867B5BFF16F0E0307AC54DF471E7CA768AE7C6A227
+        sync: false
       - key: SESSION_SECRET
-        value: kora_session_secret_key_production_2024_render_deploy
+        sync: false
       - key: CLERK_SECRET_KEY
-        value: sk_test_Hkd6sNcwj9C4tQ8VOMUAbSv3HjimNEYxndUz5ffK7p
+        sync: false
       - key: CLERK_AUTHORIZED_PARTIES
         sync: false
       - key: CLERK_WEBHOOK_SECRET
         sync: false
+      # Payment secrets
       - key: STRIPE_SECRET_KEY
         sync: false
       - key: STRIPE_WEBHOOK_SECRET
         sync: false
+      # Monitoring
       - key: SENTRY_DSN
         sync: false
+      # CORS & API base URL
       - key: CORS_ORIGINS
         sync: false
       - key: API_BASE_URL
         sync: false
+      # AI providers - at least one required
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: GOOGLE_API_KEY
+        sync: false
+      - key: MISTRAL_API_KEY
+        sync: false
+      - key: AI_BUDGET_USD_MONTHLY
+        value: 100
 
   # ── Background Worker ─────────────────────────────────────────────────────────
   - type: worker
@@ -79,6 +95,8 @@ services:
         value: 20
       - key: NODE_ENV
         value: production
+      - key: LOG_LEVEL
+        value: info
       - key: DATABASE_URL
         sync: false
       - key: REDIS_URL
