@@ -260,7 +260,10 @@ export function createApp() {
 
   // SPA fallback: serve index.html for all non-API routes
   app.get("*", (_req, res) => {
-    res.sendFile(path.join(frontendDist, "index.html"));
+    const indexPath = path.join(frontendDist, "index.html");
+    res.sendFile(indexPath, (err) => {
+      if (err) res.status(404).json({ success: false, error: { code: "NOT_FOUND", message: "Frontend not available" } });
+    });
   });
 
   // ==========================================
