@@ -3,6 +3,11 @@ WORKDIR /app
 
 # ---- Frontend build stage ----
 FROM base AS frontend-builder
+# Vite bakes VITE_* vars into the bundle at build time — must be passed as build args
+ARG VITE_CLERK_PUBLISHABLE_KEY
+ARG VITE_API_BASE_URL
+ENV VITE_CLERK_PUBLISHABLE_KEY=$VITE_CLERK_PUBLISHABLE_KEY
+ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
 COPY frontend/package*.json ./frontend/
 WORKDIR /app/frontend
 RUN npm ci
