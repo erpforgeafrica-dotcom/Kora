@@ -4,25 +4,28 @@ import { logger } from "../shared/logger.js";
 
 // Rate limiters by endpoint type
 export const apiLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // 100 requests per window
+  windowMs: 15 * 60 * 1000,
+  max: 100,
   message: "Too many requests, please try again later",
   standardHeaders: true,
   legacyHeaders: false,
   skip: (req) => req.path === "/health",
+  validate: { xForwardedForHeader: false },
 });
 
 export const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 5, // 5 attempts per window
+  max: 5,
   message: "Too many auth attempts, please try again later",
   skipSuccessfulRequests: true,
+  validate: { xForwardedForHeader: false },
 });
 
 export const webhookLimiter = rateLimit({
-  windowMs: 60 * 1000, // 1 minute
-  max: 1000, // High limit for webhooks
+  windowMs: 60 * 1000,
+  max: 1000,
   message: "Webhook rate limit exceeded",
+  validate: { xForwardedForHeader: false },
 });
 
 // API Key validation
@@ -59,10 +62,11 @@ export function createOrgRateLimiter(requestsPerMinute = 60) {
     windowMs: 60 * 1000,
     max: requestsPerMinute,
     keyGenerator: (req, res) => {
-      const orgId = (res?.locals?.auth?.organizationId) || "anonymous";  // ✅ Use JWT org, not header
+      const orgId  = res?.locals?.auth?.organizationId || "anonymous";
       const userId = (req as any).user?.id;
       return `${orgId}:${userId}`;
     },
     message: "Organization rate limit exceeded",
+    validate: { xForwardedForHeader: false },
   });
 }

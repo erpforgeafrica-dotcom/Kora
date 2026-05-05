@@ -85,6 +85,9 @@ export function createApp() {
   //   logger.warn('Threat detection initialization failed - continuing without it', { error: err.message });
   // });
 
+  // Trust Railway/Render proxy — required for express-rate-limit and req.ip to work correctly
+  app.set("trust proxy", 1);
+
   // Security headers — production-hardened
   app.use(helmet({
     hsts: config.NODE_ENV === 'production' ? { maxAge: 31536000, includeSubDomains: true, preload: true } : false,
@@ -105,8 +108,9 @@ export function createApp() {
   }));
 
   // CORS — restrict to configured origins in production
+  // Static assets served by express.static don't go through CORS — only /api/* routes do
   const allowedOrigins = (process.env.CORS_ORIGINS || 'http://localhost:5173').split(',').map(o => o.trim());
-  app.use(cors({
+  app.use("/api", cors({
     origin: (origin, callback) => {
       if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
       callback(new Error(`CORS: origin ${origin} not allowed`));
