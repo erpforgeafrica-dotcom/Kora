@@ -16,6 +16,7 @@ import { ContentModule } from "./pages/content/ContentModule";
 
 import StubPage from "./pages/StubPage";
 import LoginPage from "./pages/LoginPage";
+import RegisterPage from "./pages/RegisterPage";
 
 const S = (title: string) => () => <StubPage title={title} />;
 
@@ -176,6 +177,7 @@ export default function App() {
         <Routes>
           <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
           <Route path="/search" element={<SearchResultsPage />} />
           <Route path="/app" element={<AppShell><Outlet /></AppShell>}>
             <Route index element={<DefaultDashboardRedirect />} />
