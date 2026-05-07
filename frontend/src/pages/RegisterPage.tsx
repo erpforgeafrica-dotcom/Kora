@@ -4,13 +4,15 @@ import { useAuthContext } from "@/contexts/AuthContext";
 import { normalizeErrorResponse, normalizeLoginResponse, renderSafeString } from "@/services/normalizers";
 import { getDefaultDashboardPath, normalizeDashboardRole } from "../auth/dashboardAccess";
 
-export default function LoginPage() {
+export default function RegisterPage() {
   const { setToken, setOrgId, isLoading, userRole, isAuthenticated } = useAuthContext();
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState<unknown>(null);
   const [submitting, setSubmitting] = useState(false);
+  
   const errorMessage =
     error == null
       ? null
@@ -33,9 +35,20 @@ export default function LoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+
+    if (password !== confirmPassword) {
+      setError("Passwords do not match");
+      return;
+    }
+
+    if (password.length < 8) {
+      setError("Password must be at least 8 characters");
+      return;
+    }
+
     setSubmitting(true);
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL ?? "http://localhost:3000"}/api/auth/login`, {
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL ?? "http://localhost:3000"}/api/auth/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
@@ -73,7 +86,7 @@ export default function LoginPage() {
         <div style={{ fontSize: 11, letterSpacing: "0.18em", color: "var(--color-accent)", fontFamily: "'DM Mono', monospace", marginBottom: 8, textTransform: "uppercase" }}>
           KÓRA Platform
         </div>
-        <h1 style={{ margin: "0 0 24px", fontSize: 22, color: "var(--color-text-primary)" }}>Sign in</h1>
+        <h1 style={{ margin: "0 0 24px", fontSize: 22, color: "var(--color-text-primary)" }}>Create account</h1>
 
         <form onSubmit={handleSubmit} style={{ display: "grid", gap: 14 }}>
           <input
@@ -92,6 +105,14 @@ export default function LoginPage() {
             required
             style={inputStyle}
           />
+          <input
+            type="password"
+            placeholder="Confirm Password"
+            value={confirmPassword}
+            onChange={e => setConfirmPassword(e.target.value)}
+            required
+            style={inputStyle}
+          />
           {errorMessage && (
             <div style={{ fontSize: 12, color: "var(--color-danger)", padding: "10px 12px", borderRadius: 8, background: "color-mix(in srgb, var(--color-danger) 10%, transparent)", border: "1px solid color-mix(in srgb, var(--color-danger) 24%, transparent)" }}>
               {errorMessage}
@@ -102,18 +123,18 @@ export default function LoginPage() {
             disabled={submitting}
             style={{ padding: "12px 0", borderRadius: 10, border: "none", background: "var(--color-accent)", color: "#fff", fontSize: 13, fontWeight: 700, cursor: submitting ? "not-allowed" : "pointer", opacity: submitting ? 0.7 : 1 }}
           >
-            {submitting ? "Signing in…" : "Sign in"}
+            {submitting ? "Creating account…" : "Sign up"}
           </button>
         </form>
 
         <div style={{ marginTop: 16, textAlign: "center", fontSize: 13, color: "var(--color-text-secondary)" }}>
-          Don't have an account?{" "}
+          Already have an account?{" "}
           <button
             type="button"
-            onClick={() => navigate("/register")}
+            onClick={() => navigate("/login")}
             style={{ background: "none", border: "none", color: "var(--color-accent)", cursor: "pointer", textDecoration: "underline", fontSize: 13, fontWeight: 600 }}
           >
-            Sign up
+            Sign in
           </button>
         </div>
       </div>
