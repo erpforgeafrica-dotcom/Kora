@@ -109,10 +109,15 @@ export function createApp() {
 
   // CORS — restrict to configured origins in production
   // Static assets served by express.static don't go through CORS — only /api/* routes do
-  const allowedOrigins = (process.env.CORS_ORIGINS || 'http://localhost:5173').split(',').map(o => o.trim());
+  // In production, if no CORS_ORIGINS is set, allow the current request origin (for same-domain deployments)
+  const corsOriginsEnv = process.env.CORS_ORIGINS || (config.NODE_ENV === 'production' ? '*' : 'http://localhost:5173');
+  const allowedOrigins = corsOriginsEnv === '*' ? null : corsOriginsEnv.split(',').map(o => o.trim());
   app.use("/api", cors({
     origin: (origin, callback) => {
-      if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
+      // If allowedOrigins is null, allow all origins (production with no CORS_ORIGINS env var)
+      if (allowedOrigins === null) return callback(null, true);
+      // Otherwise, check whitelist
+      if (!origin || allowedOrigins!.includes(origin)) return callback(null, true);
       callback(new Error(`CORS: origin ${origin} not allowed`));
     },
     credentials: true,
