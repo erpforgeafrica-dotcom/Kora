@@ -2,10 +2,14 @@ import type { Request, Response, NextFunction } from "express";
 import rateLimit from "express-rate-limit";
 import { logger } from "../shared/logger.js";
 
+// Configurable limits via environment variables
+const RATE_LIMIT_MAX     = parseInt(process.env.RATE_LIMIT_MAX     || "1000", 10);
+const RATE_LIMIT_ORG_MAX = parseInt(process.env.RATE_LIMIT_ORG_MAX || "300",  10);
+
 // Rate limiters by endpoint type
 export const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 100,
+  max: RATE_LIMIT_MAX,
   message: "Too many requests, please try again later",
   standardHeaders: true,
   legacyHeaders: false,
@@ -57,7 +61,7 @@ export function validateApiKey(req: Request, res: Response, next: NextFunction) 
 }
 
 // Rate limit by user/org
-export function createOrgRateLimiter(requestsPerMinute = 60) {
+export function createOrgRateLimiter(requestsPerMinute = RATE_LIMIT_ORG_MAX) {
   return rateLimit({
     windowMs: 60 * 1000,
     max: requestsPerMinute,

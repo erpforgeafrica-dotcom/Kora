@@ -160,7 +160,7 @@ export function createApp() {
 
   // Rate limiting
   app.use(apiLimiter);
-  app.use(createOrgRateLimiter(60));
+  app.use(createOrgRateLimiter());
 
   // Auth middleware — Clerk JWT (primary) + cookie session (enrichment, no-op if no cookies)
   app.use(optionalAuth);
