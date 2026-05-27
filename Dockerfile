@@ -30,9 +30,11 @@ WORKDIR /app/backend
 RUN npm ci --only=production
 COPY --from=backend-builder /app/backend/dist ./dist
 COPY --from=backend-builder /app/backend/dist/db/migrations ./dist/db/migrations
+COPY backend/startup.sh ./startup.sh
+RUN chmod +x ./startup.sh
 COPY --from=frontend-builder /app/frontend/dist /app/frontend/dist
-EXPOSE 10000
-HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
-  CMD node -e "require('http').get('http://localhost:' + (process.env.PORT||10000) + '/health', (r) => {if (r.statusCode !== 200) throw new Error(r.statusCode)})" || exit 1
+EXPOSE 3000
+HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
+  CMD node -e "require('http').get('http://localhost:' + (process.env.PORT||3000) + '/health', (r) => {if (r.statusCode !== 200) throw new Error(r.statusCode)})" || exit 1
 ENTRYPOINT ["dumb-init", "--"]
-CMD ["sh", "-c", "node dist/db/migrate.js && node dist/server.js"]
+CMD ["./startup.sh"]

@@ -69,6 +69,12 @@ async function main() {
   console.log("\n📦 Running Database Migrations\n");
 
   try {
+    // Verify database connection is valid
+    const testConn = await dbPool.connect();
+    const result = await testConn.query("SELECT now()");
+    testConn.release();
+    console.log(`✅ Database connected at ${result.rows[0].now}`);
+
     await ensureMigrationsTable();
     const files = (await fs.readdir(migrationsDir))
       .filter((name) => name.endsWith(".sql"))

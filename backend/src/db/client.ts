@@ -2,7 +2,54 @@ import { Pool, type QueryResultRow } from "pg";
 import { config } from "../config/environment.js";
 import { logger } from "../shared/logger.js";
 
-const connectionString = config.DATABASE_URL;
+/**
+ * Build database connection string from environment
+ * 
+ * Priority:
+ * 1. DATABASE_URL (standard, used by most platforms)
+ * 2. Individual vars (PGHOST, PGPORT, PGUSER, PGPASSWORD, PGDATABASE) - used by Railway PostgreSQL plugin
+ * 3. Fallback: throw error
+ */
+function buildConnectionString(): string {
+  // Check for standard DATABASE_URL first
+  if (process.env.DATABASE_URL?.trim()) {
+    logger.info('Using DATABASE_URL from environment');
+    return process.env.DATABASE_URL.trim();
+  }
+
+  // Railway provides individual PostgreSQL variables
+  const pgHost = process.env.PGHOST?.trim();
+  const pgPort = process.env.PGPORT?.trim() || '5432';
+  const pgUser = process.env.PGUSER?.trim();
+  const pgPassword = process.env.PGPASSWORD?.trim();
+  const pgDatabase = process.env.PGDATABASE?.trim();
+
+  if (pgHost && pgUser && pgPassword && pgDatabase) {
+    const url = `postgresql://${pgUser}:${pgPassword}@${pgHost}:${pgPort}/${pgDatabase}`;
+    logger.info('Database connection string built from Railway environment variables', {
+      host: pgHost,
+      port: pgPort,
+      user: pgUser,
+      database: pgDatabase
+    });
+    return url;
+  }
+
+  // Detailed error message for debugging
+  const missingVars = [];
+  if (!pgHost) missingVars.push('PGHOST');
+  if (!pgUser) missingVars.push('PGUSER');
+  if (!pgPassword) missingVars.push('PGPASSWORD');
+  if (!pgDatabase) missingVars.push('PGDATABASE');
+
+  const errorMsg = `DATABASE_URL not set and missing Railway PostgreSQL variables: ${missingVars.join(', ')}. ` +
+    'Please ensure Railway PostgreSQL plugin is connected or set DATABASE_URL environment variable.';
+  
+  logger.error(errorMsg);
+  throw new Error(errorMsg);
+}
+
+const connectionString = buildConnectionString();
 
 export const dbPool = new Pool({
   connectionString,
@@ -15,7 +62,7 @@ export const dbPool = new Pool({
   allowExitOnIdle: false,
   ssl: connectionString?.includes('supabase.com') ? {
     rejectUnauthorized: false
-  } : false,
+  } : true, // Enable SSL for all remote databases
 });
 
 // Pool event handlers for monitoring
