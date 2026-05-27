@@ -9,7 +9,10 @@ export const apiLimiter = rateLimit({
   message: "Too many requests, please try again later",
   standardHeaders: true,
   legacyHeaders: false,
-  skip: (req) => req.path === "/health",
+  skip: (req) =>
+    req.path === "/health" ||
+    req.path === "/favicon.ico" ||
+    req.path.startsWith("/assets/"),
   validate: { xForwardedForHeader: false },
 });
 

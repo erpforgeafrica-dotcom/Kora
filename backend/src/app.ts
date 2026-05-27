@@ -158,9 +158,9 @@ export function createApp() {
   // API versioning
   app.use(extractApiVersion);
 
-  // Rate limiting
-  app.use(apiLimiter);
-  app.use(createOrgRateLimiter(60));
+  // Rate limiting — scoped to /api/* only so static assets are never rate-limited
+  app.use("/api", apiLimiter);
+  app.use("/api", createOrgRateLimiter(60));
 
   // Auth middleware — Clerk JWT (primary) + cookie session (enrichment, no-op if no cookies)
   app.use(optionalAuth);
