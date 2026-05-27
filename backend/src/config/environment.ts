@@ -22,11 +22,11 @@ interface EnvironmentConfig {
 }
 
 const REQUIRED_VARS = [
-  "DATABASE_URL",
-  "REDIS_URL",
   "JWT_SECRET",
   "SESSION_SECRET",
   "CLERK_SECRET_KEY",
+  // DATABASE_URL is required UNLESS Railway PostgreSQL vars are set
+  // REDIS_URL is optional for initial deployment (can be added later)
 ] as const;
 
 function req(name: string): string {
@@ -60,11 +60,26 @@ export function validateEnvironment(): EnvironmentConfig {
     }
   }
 
+  // DATABASE_URL is optional if Railway PostgreSQL variables are provided
+  const hasDatabaseUrl = process.env.DATABASE_URL?.trim();
+  const hasRailwayPostgres = 
+    process.env.PGHOST?.trim() && 
+    process.env.PGUSER?.trim() && 
+    process.env.PGPASSWORD?.trim() && 
+    process.env.PGDATABASE?.trim();
+  
+  if (!hasDatabaseUrl && !hasRailwayPostgres) {
+    throw new Error(
+      'STARTUP FAILED: DATABASE_URL not set and Railway PostgreSQL variables not found. ' +
+      'Set either DATABASE_URL or all of: PGHOST, PGPORT, PGUSER, PGPASSWORD, PGDATABASE'
+    );
+  }
+
   const config: EnvironmentConfig = {
     NODE_ENV:                  process.env.NODE_ENV || "development",
     PORT:                      num("PORT", 3000),
-    DATABASE_URL:              req("DATABASE_URL"),
-    REDIS_URL:                 req("REDIS_URL"),
+    DATABASE_URL:              hasDatabaseUrl ? req("DATABASE_URL") : opt("DATABASE_URL", ""),
+    REDIS_URL:                 opt("REDIS_URL", ""),
     JWT_SECRET:                req("JWT_SECRET"),
     SESSION_SECRET:            req("SESSION_SECRET"),
     CLERK_SECRET_KEY:          req("CLERK_SECRET_KEY"),
