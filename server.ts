@@ -999,3 +999,100 @@ app.post("/api/auth/onboard-user", async (req, res) => {
     });
   }
 });
+
+// ==========================================================================
+// CLERK + SUPABASE HYBRID AUTH BRIDGE
+// ==========================================================================
+
+import { ClerkClient } from '@clerk/clerk-sdk-node';
+import jwt from 'jsonwebtoken';
+
+const clerkClient = new ClerkClient({ 
+  secretKey: process.env.CLERK_SECRET_KEY 
+});
+
+/**
+ * Exchange Clerk JWT for Supabase JWT
+ * This enables RLS policies to work with Clerk-authenticated users
+ */
+app.post("/api/auth/clerk-to-supabase", async (req, res) => {
+  const authHeader = req.headers.authorization;
+  const clerkToken = authHeader?.replace('Bearer ', '');
+
+  if (!clerkToken) {
+    return res.status(401).json({ error: 'No token provided' });
+  }
+
+  try {
+    // Verify Clerk token
+    const clerkUser = await clerkClient.verifyToken(clerkToken);
+    
+    const { clerkUserId, email, fullName } = req.body;
+
+    if (!clerkUserId || !email) {
+      return res.status(400).json({ error: 'Missing user data' });
+    }
+
+    // Create or get Supabase user (using service role)
+    if (!supabaseAdmin) {
+      return res.status(500).json({ error: 'Service role not configured' });
+    }
+
+    // Check if user exists in Supabase
+    const { data: existingUser } = await supabaseAdmin.auth.admin.getUserById(clerkUserId);
+
+    let supabaseUser;
+
+    if (!existingUser) {
+      // Create Supabase user with Clerk ID
+      const { data, error } = await supabaseAdmin.auth.admin.createUser({
+        email,
+        email_confirm: true,
+        user_metadata: {
+          full_name: fullName,
+          clerk_id: clerkUserId
+        }
+      });
+
+      if (error) {
+        console.error('Supabase user creation failed:', error);
+        return res.status(500).json({ error: error.message });
+      }
+
+      supabaseUser = data.user;
+
+      // Create entity_graph entry (tenant will be assigned during onboarding)
+      await supabaseAdmin.from('entity_graph').insert({
+        auth_user_id: supabaseUser.id,
+        entity_type: 'user',
+        entity_id: supabaseUser.id,
+        // tenant_id will be set during onboarding
+      });
+    } else {
+      supabaseUser = existingUser;
+    }
+
+    // Generate custom Supabase JWT
+    const supabaseJWT = jwt.sign(
+      {
+        sub: supabaseUser.id,
+        email: supabaseUser.email,
+        role: 'authenticated',
+        iss: 'supabase',
+        aud: 'authenticated',
+        exp: Math.floor(Date.now() / 1000) + (60 * 60), // 1 hour
+      },
+      process.env.JWT_SECRET!
+    );
+
+    res.json({
+      success: true,
+      supabaseToken: supabaseJWT,
+      userId: supabaseUser.id
+    });
+
+  } catch (error: any) {
+    console.error('Clerk-Supabase bridge error:', error);
+    res.status(401).json({ error: 'Invalid token', details: error.message });
+  }
+});
