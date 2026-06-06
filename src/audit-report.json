@@ -1,0 +1,82 @@
+{
+  "scanDate": "2026-05-31T14:21:30.584Z",
+  "filesInspected": [
+    "server.ts",
+    "src/App.tsx",
+    "src/components/AIGatewayTab.tsx",
+    "src/components/BlockchainTab.tsx",
+    "src/components/DatabaseTab.tsx",
+    "src/components/ForensicsTab.tsx",
+    "src/components/ObservabilityTab.tsx",
+    "src/components/ReportsTab.tsx",
+    "src/components/ResilienceTab.tsx",
+    "src/components/SecurityTab.tsx",
+    "src/main.tsx",
+    "src/types.ts"
+  ],
+  "routes": [
+    {
+      "path": "/api/health",
+      "method": "GET",
+      "lines": [
+        40,
+        40
+      ]
+    },
+    {
+      "path": "/api/ai/gateway",
+      "method": "POST",
+      "lines": [
+        49,
+        49
+      ]
+    },
+    {
+      "path": "/api/forensics/analyze",
+      "method": "POST",
+      "lines": [
+        118,
+        118
+      ]
+    },
+    {
+      "path": "/api/blockchain/verify",
+      "method": "POST",
+      "lines": [
+        158,
+        158
+      ]
+    },
+    {
+      "path": "*",
+      "method": "GET",
+      "lines": [
+        190,
+        190
+      ]
+    }
+  ],
+  "middlewares": [
+    "Line 10: app.use(express.json());",
+    "Line 185: app.use(vite.middlewares);",
+    "Line 189: app.use(express.static(distPath));"
+  ],
+  "envVars": [
+    "GEMINI_API_KEY",
+    "NODE_ENV"
+  ],
+  "findings": [],
+  "mockVsRealMatrix": {
+    "Vite React Dynamic Portal Frame": "REAL",
+    "Express Full-Stack Server (/server.ts)": "REAL",
+    "Health Monitoring Route (/api/health)": "REAL",
+    "Real-time Gemini AI Gateway Route (/api/ai/gateway)": "REAL",
+    "Forensic Code Consulting AI Endpoint (/api/forensics/analyze)": "REAL",
+    "SHA-256 Ledger Block Miner Endpoint (/api/blockchain/verify)": "REAL",
+    "Relational Database (Cloud Spanner / Postgres-Spanner Connection)": "SIMULATED",
+    "Row Level Security (RLS) Database Filter Engine": "SIMULATED",
+    "Multi-Region DNS Anycast DR Failover Infrastructure": "SIMULATED",
+    "SIEM Log Pipeline (Splunk / Elastic integration)": "SIMULATED",
+    "Blockchain Multi-node Consensus & Decentralization": "SIMULATED"
+  }
+}

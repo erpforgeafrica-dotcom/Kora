@@ -1,0 +1,6 @@
+{
+  "name": "HealthConnect™ SBOS",
+  "description": "HealthConnect™ Service Business Operating System (SBOS) - Core Platform with Regulated Medical Service Verticals",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
