@@ -857,16 +857,12 @@ startServer();
 
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-
-// Admin client with service_role key (bypasses RLS)
-const supabaseAdmin = supabaseServiceKey ? createClient(supabaseUrl, supabaseServiceKey, {
-  auth: {
-    autoRefreshToken: false,
-    persistSession: false
-  }
-}) : null;
+function getSupabaseAdmin() {
+  const url = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !key) return null;
+  return createClient(url, key, { auth: { autoRefreshToken: false, persistSession: false } });
+}
 
 /**
  * Set tenant_id in user's JWT metadata
@@ -882,15 +878,11 @@ app.post("/api/auth/set-tenant-metadata", async (req, res) => {
     });
   }
 
+  const supabaseAdmin = getSupabaseAdmin();
   if (!supabaseAdmin) {
-    return res.status(500).json({
-      success: false,
-      message: "Service role key not configured"
-    });
+    return res.status(500).json({ success: false, message: "Service role key not configured" });
   }
-
   try {
-    // Update user metadata with tenant_id
     const { data, error } = await supabaseAdmin.auth.admin.updateUserById(
       userId,
       {
@@ -933,8 +925,11 @@ app.post("/api/auth/onboard-user", async (req, res) => {
     });
   }
 
+  const supabaseAdmin = getSupabaseAdmin();
+  if (!supabaseAdmin) {
+    return res.status(500).json({ success: false, message: "Service role key not configured" });
+  }
   try {
-    // 1. Create tenant
     const { data: tenant, error: tenantError } = await supabaseAdmin
       .from('tenants')
       .insert({
@@ -1038,19 +1033,12 @@ app.post("/api/auth/clerk-to-supabase", async (req, res) => {
       return res.status(400).json({ error: 'Missing user data' });
     }
 
-    // Create or get Supabase user (using service role)
-    if (!supabaseAdmin) {
-      return res.status(500).json({ error: 'Service role not configured' });
-    }
-
-    // Check if user exists in Supabase
-    const { data: existingUser } = await supabaseAdmin.auth.admin.getUserById(clerkUserId);
-
+    const supabaseAdmin2 = getSupabaseAdmin();
+    if (!supabaseAdmin2) return res.status(500).json({ error: 'Service role not configured' });
+    const { data: existingUser } = await supabaseAdmin2.auth.admin.getUserById(clerkUserId);
     let supabaseUser;
-
     if (!existingUser) {
-      // Create Supabase user with Clerk ID
-      const { data, error } = await supabaseAdmin.auth.admin.createUser({
+      const { data, error } = await supabaseAdmin2.auth.admin.createUser({
         email,
         email_confirm: true,
         user_metadata: {
@@ -1067,7 +1055,7 @@ app.post("/api/auth/clerk-to-supabase", async (req, res) => {
       supabaseUser = data.user;
 
       // Create entity_graph entry (tenant will be assigned during onboarding)
-      await supabaseAdmin.from('entity_graph').insert({
+      await supabaseAdmin2.from('entity_graph').insert({
         auth_user_id: supabaseUser.id,
         entity_type: 'user',
         entity_id: supabaseUser.id,
