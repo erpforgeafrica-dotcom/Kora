@@ -845,7 +845,7 @@ async function startServer() {
   }
 
   app.listen(PORT, "0.0.0.0", () => {
-    console.log(`Server serving on http://localhost:${PORT}`);
+    console.log(`Server serving on http://0.0.0.0:${PORT} (PORT env: ${process.env.PORT})`);
   });
 }
 
