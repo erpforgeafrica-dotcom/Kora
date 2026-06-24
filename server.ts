@@ -21,7 +21,7 @@ dotenv.config();
 const app = express();
 app.use(express.json());
 
-const PORT = 3000;
+const PORT = process.env.PORT ? parseInt(process.env.PORT) : 3000;
 
 // Lazy client holder
 let aiClient: GoogleGenAI | null = null;
@@ -825,7 +825,11 @@ app.post("/api/v1/enterprise/ledger/post", (req, res) => {
 // --------------------------------------------------------------------------
 
 async function startServer() {
-  if (process.env.NODE_ENV !== "production") {
+  const distPath = path.join(process.cwd(), "dist");
+  const fs = await import("fs");
+  const isProduction = process.env.NODE_ENV === "production" || fs.existsSync(distPath + "/index.html");
+
+  if (!isProduction) {
     // Vite Dev server middleware
     const vite = await createViteServer({
       server: { middlewareMode: true },
@@ -834,9 +838,8 @@ async function startServer() {
     app.use(vite.middlewares);
   } else {
     // Production client distribution bundle
-    const distPath = path.join(process.cwd(), "dist");
     app.use(express.static(distPath));
-    app.get("*", (req, res) => {
+    app.get("*", (_req, res) => {
       res.sendFile(path.join(distPath, "index.html"));
     });
   }
