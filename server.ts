@@ -1007,10 +1007,10 @@ app.post("/api/auth/onboard-user", async (req, res) => {
 // CLERK + SUPABASE HYBRID AUTH BRIDGE
 // ==========================================================================
 
-import { ClerkClient } from '@clerk/clerk-sdk-node';
+import Clerk from '@clerk/clerk-sdk-node';
 import jwt from 'jsonwebtoken';
 
-const clerkClient = new ClerkClient({ 
+const clerkClient = new Clerk.ClerkClient({ 
   secretKey: process.env.CLERK_SECRET_KEY 
 });
 
