@@ -1007,12 +1007,13 @@ app.post("/api/auth/onboard-user", async (req, res) => {
 // CLERK + SUPABASE HYBRID AUTH BRIDGE
 // ==========================================================================
 
-import Clerk from '@clerk/clerk-sdk-node';
+import { createClerkClient } from '@clerk/clerk-sdk-node';
 import jwt from 'jsonwebtoken';
 
-const clerkClient = new Clerk.ClerkClient({ 
-  secretKey: process.env.CLERK_SECRET_KEY 
-});
+function getClerkClient() {
+  if (!process.env.CLERK_SECRET_KEY) return null;
+  return createClerkClient({ secretKey: process.env.CLERK_SECRET_KEY });
+}
 
 /**
  * Exchange Clerk JWT for Supabase JWT
@@ -1027,8 +1028,9 @@ app.post("/api/auth/clerk-to-supabase", async (req, res) => {
   }
 
   try {
-    // Verify Clerk token
-    const clerkUser = await clerkClient.verifyToken(clerkToken);
+    const clerk = getClerkClient();
+    if (!clerk) return res.status(500).json({ error: 'Clerk not configured' });
+    const clerkUser = await clerk.verifyToken(clerkToken);
     
     const { clerkUserId, email, fullName } = req.body;
 
