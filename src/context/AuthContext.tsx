@@ -10,6 +10,7 @@ interface AuthState {
   tenant:   Tenant | null;
   loading:  boolean;
   isBusinessOwner: boolean;
+  isPlatformAdmin: boolean;
   viewMode: 'consumer' | 'business';
   setViewMode: (m: 'consumer' | 'business') => void;
   refresh: () => Promise<void>;
@@ -77,6 +78,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     <AuthContext.Provider value={{
       session, user, entity, tenant, loading,
       isBusinessOwner: entity?.entity_type === 'BUSINESS_OWNER',
+      isPlatformAdmin: user?.user_metadata?.role === 'platform_admin' || user?.app_metadata?.role === 'platform_admin',
       viewMode, setViewMode, refresh, signOut,
     }}>
       {children}
